@@ -1,0 +1,44 @@
+name:                bowser
+version:             0.0.1
+github:              "mfaerevaag/bowser"
+author:              "Markus Faerevaag"
+maintainer:          "m@frv.ag"
+copyright:           "2018 Markus Faerevaag"
+
+extra-source-files:
+- README.md
+
+# Metadata
+synopsis:            Secure web-browser
+category:            Web
+
+# Documentation
+description:         Please see the README on Github at <https://github.com/mfaerevaag/bowser#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+executables:
+  bowser-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - bowser
+
+tests:
+  bowser-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - bowser
