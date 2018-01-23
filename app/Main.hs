@@ -1,6 +1,10 @@
 module Main where
 
-import Lib
+import Bowser.DOM.HTML
 
 main :: IO ()
-main = someFunc
+main = do
+  html <- readFile path
+  printTree $ parseHtml html
+  where
+    path = "examples/foo.html"
