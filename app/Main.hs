@@ -2,6 +2,7 @@ module Main where
 
 -- import Bowser.DOM.HTML
 import Bowser.JS.Parser
+import Bowser.JS.Engine
 
 -- main :: IO ()
 -- main = do
@@ -13,6 +14,13 @@ import Bowser.JS.Parser
 main :: IO ()
 main = do
   js <- readFile path
-  printJs $ parseJs js
+
+  putStrLn "ast:"
+  print $ parseJs js
+  putStrLn ""
+
+  putStrLn "return:"
+  print $ runJs $ parseJs js
+
   where
     path = "examples/foo.js"
