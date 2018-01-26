@@ -23,6 +23,7 @@ library:
   dependencies:
   - hxt
   - HandsomeSoup
+  - language-javascript
 
 executables:
   bowser-exe:
