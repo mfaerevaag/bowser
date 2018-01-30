@@ -1,13 +1,20 @@
 module Bowser.JS.Environment
-  ( JSEnv
-  , JSValue (..)
+  ( Env
+  , Ident
+  , Value (..)
+  , emptyEnv
   ) where
 
+import Data.Map (Map)
 import qualified Data.Map as Map
 
-data JSEnv = Map String JSValue
+type Env = Map.Map Ident Value
 
--- TODO: add all types
-data JSValue = JSInt Integer
-             | JSString String
-             deriving (Show)
+type Ident = String
+
+-- TODO: implement all types
+data Value = JSInt Integer
+           | JSString String
+           deriving (Show)
+
+emptyEnv = Map.empty

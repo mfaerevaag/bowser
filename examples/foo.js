@@ -1,5 +1,1 @@
-var foo = function() {
-    1
-};
-
-foo();
+1 + 1

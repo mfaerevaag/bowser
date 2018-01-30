@@ -11,25 +11,26 @@ import Control.Monad.Identity
 import Bowser.JS.AST
 import Bowser.JS.Environment
 
-runJs ast = runEngine $ evalAst ast
+runJs :: JSAst -> Value
+runJs ast = runEngine $ evalAst emptyEnv ast
 
 type Engine a = Identity a
 
 runEngine :: Engine a -> a
 runEngine ev = runIdentity ev
 
-evalAst :: JSAst -> Engine JSValue
-evalAst (JSAstProgram stmts _) = evalStmt $ head stmts
-evalAst _ = error "not implemented"
+evalAst :: Env -> JSAst -> Engine Value
+evalAst env (JSAstProgram stmts _) = evalStmt env $ head stmts
+evalAst _ _ = error "not implemented"
 
-evalStmt :: JSStatement -> Engine JSValue
-evalStmt (JSExpressionStatement expr _) = evalExpr expr
-evalStmt _ = error "not implemented"
+evalStmt :: Env -> JSStatement -> Engine Value
+evalStmt env (JSExpressionStatement expr _) = evalExpr env expr
+evalStmt env _ = error "not implemented"
 
-evalExpr :: JSExpression -> Engine JSValue
-evalExpr (JSDecimal _ i) = return $ JSInt (read i)
-evalExpr (JSExpressionBinary e1 op e2) = do
-  JSInt i1 <- evalExpr e1
-  JSInt i2 <- evalExpr e2
+evalExpr :: Env -> JSExpression -> Engine Value
+evalExpr env (JSDecimal _ i) = return $ JSInt (read i)
+evalExpr env (JSExpressionBinary e1 op e2) = do
+  JSInt i1 <- evalExpr env e1
+  JSInt i2 <- evalExpr env e2
   return $ JSInt (i1 + i2)
-evalExpr _ = error "not implemented"
+evalExpr env _ = error "not implemented"
