@@ -37,11 +37,11 @@ incState = do
 
 evalAst :: JSAst -> Engine Value
 evalAst (JSAstProgram stmts _) = evalStmt $ head stmts
-evalAst _ = error "not implemented"
+evalAst _ = throwError "not implemented"
 
 evalStmt :: JSStatement -> Engine Value
 evalStmt (JSExpressionStatement expr _) = evalExpr expr
-evalStmt _ = error "not implemented"
+evalStmt _ = throwError "not implemented"
 
 evalExpr :: JSExpression -> Engine Value
 evalExpr (JSDecimal _ s) = do
@@ -54,4 +54,4 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   case (e1', e2') of
     (JSInt i1, JSInt i2) -> return $ JSInt (i1 + i2)
     _ -> throwError "type error: addition expected ints"
-evalExpr _ = error "not implemented"
+evalExpr _ = throwError "not implemented"
