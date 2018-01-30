@@ -8,14 +8,15 @@ import Bowser.JS.AST
 
 main :: IO ()
 main = do
-  ast <- parseJs path
-
   putStrLn "ast:"
+  ast <- parseJs path
   pPrint ast
+
   putStrLn ""
 
   putStrLn "return:"
-  print $ runJs ast
+  res <- runJs ast
+  pPrint res
 
   where
     path = "examples/foo.js"
