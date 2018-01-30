@@ -5,25 +5,35 @@ module Bowser.JS.Engine
 import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad.State hiding (State)
 import Control.Monad.Writer
 
 import Bowser.JS.AST
 import Bowser.JS.Environment
 
+-- utility
+
 runJs ast = runEngine emptyEnv 0 (evalAst ast)
 
--- TODO: state as type
-type Engine a = ReaderT Env (ErrorT String (WriterT [String] (StateT Integer IO))) a
+-- engine
 
-runEngine :: Env -> Integer -> Engine a -> IO ((Either String a, [String]), Integer)
+type State = Integer
+type Engine a = ReaderT Env (ErrorT String (WriterT [String] (StateT State IO))) a
+
+runEngine :: Env -> State -> Engine a -> IO ((Either String a, [String]), State)
 runEngine env st ev = runStateT (runWriterT (runErrorT (runReaderT ev env))) st
 
--- The state is the number of steps (or ticks) in evaluating an expression
-tick :: (Num s, MonadState s m) => m()
-tick = do
+-- state
+
+emptyState :: State
+emptyState = 0
+
+incState :: (Num s, MonadState s m) => m()
+incState = do
   st <- get
   put (st + 1)
+
+-- interpreter
 
 evalAst :: JSAst -> Engine Value
 evalAst (JSAstProgram stmts _) = evalStmt $ head stmts
@@ -35,10 +45,10 @@ evalStmt _ = error "not implemented"
 
 evalExpr :: JSExpression -> Engine Value
 evalExpr (JSDecimal _ s) = do
-  tick
+  incState
   return $ JSInt (read s)
 evalExpr (JSExpressionBinary e1 op e2) = do
-  tick
+  incState
   e1' <- evalExpr e1
   e2' <- evalExpr e2
   case (e1', e2') of
