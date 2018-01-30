@@ -9,7 +9,7 @@ main = do
   ast <- parseJs path
 
   putStrLn "ast:"
-  print ast
+  printAst ast
   putStrLn ""
 
   putStrLn "return:"
