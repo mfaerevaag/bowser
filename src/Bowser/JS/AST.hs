@@ -1,8 +1,8 @@
 module Bowser.JS.AST
   ( module Language.JavaScript.Parser.AST
   , JSAst
-  , printJs
-  , printAst
+  , renderJs
+  , prettyAst
   ) where
 
 import Language.JavaScript.Parser.AST
@@ -10,6 +10,6 @@ import Language.JavaScript.Pretty.Printer
 
 type JSAst = JSAST
 
-printJs ast = putStrLn $ renderToString ast
+renderJs ast = renderToString ast
 
-printAst ast = putStrLn $ showStripped ast
+prettyAst ast = showStripped ast

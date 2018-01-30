@@ -18,6 +18,7 @@ description:         Please see the README on Github at <https://github.com/mfae
 dependencies:
 - base >= 4.7 && < 5
 - mtl
+- pretty-show
 
 library:
   source-dirs:          src

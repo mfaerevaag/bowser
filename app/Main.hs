@@ -1,5 +1,7 @@
 module Main where
 
+import Text.Show.Pretty
+
 import Bowser.JS.Parser
 import Bowser.JS.Engine
 import Bowser.JS.AST
@@ -9,7 +11,7 @@ main = do
   ast <- parseJs path
 
   putStrLn "ast:"
-  printAst ast
+  pPrint ast
   putStrLn ""
 
   putStrLn "return:"
