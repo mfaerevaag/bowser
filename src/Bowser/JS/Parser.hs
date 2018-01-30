@@ -3,9 +3,9 @@ module Bowser.JS.Parser
   , printJs
   ) where
 
-import Language.JavaScript.Parser.Parser (readJs)
+import Language.JavaScript.Parser.Parser
 import Language.JavaScript.Pretty.Printer (renderToString)
 
-parseJs js = readJs js
+parseJs = parseFile
 
 printJs ast = putStrLn $ renderToString ast

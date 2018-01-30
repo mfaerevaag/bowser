@@ -3,12 +3,11 @@ module Bowser.JS.Environment
   , JSValue (..)
   ) where
 
-import Data.Map (Map)
 import qualified Data.Map as Map
 
 data JSEnv = Map String JSValue
 
 -- TODO: add all types
-data JSValue = JSInt Int
+data JSValue = JSInt Integer
              | JSString String
              deriving (Show)
