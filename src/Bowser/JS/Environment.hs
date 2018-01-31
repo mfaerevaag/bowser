@@ -3,6 +3,8 @@ module Bowser.JS.Environment
   , Ident
   , Value (..)
   , emptyEnv
+  , lookupEnv
+  , insertEnv
   ) where
 
 import Data.Map (Map)
@@ -13,8 +15,13 @@ type Env = Map.Map Ident Value
 type Ident = String
 
 -- TODO: implement all types
-data Value = JSInt Integer
+data Value = JSUndefined
+           | JSInt Integer
            | JSString String
            deriving (Show)
 
 emptyEnv = Map.empty
+
+lookupEnv id env = Map.lookup id env
+
+insertEnv id val env = Map.insert id val env

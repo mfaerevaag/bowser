@@ -36,17 +36,34 @@ incState = do
 -- interpreter
 
 evalAst :: JSAst -> Engine Value
-evalAst (JSAstProgram stmts _) = evalStmt $ head stmts
-evalAst _ = throwError "not implemented"
+evalAst (JSAstProgram stmts _) = evalStmt stmts
+evalAst x = throwError ("not implemented ast: " ++ (show x))
 
-evalStmt :: JSStatement -> Engine Value
-evalStmt (JSExpressionStatement expr _) = evalExpr expr
-evalStmt _ = throwError "not implemented"
+evalStmt :: [JSStatement] -> Engine Value
+evalStmt ((JSVariable _ clist _):xs) = case clist of
+  JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
+    val <- evalVarInitializer init
+    env <- ask
+    local (const (insertEnv id val env)) (evalStmt xs)
+  otherwise -> throwError "not implemented TODO"
+evalStmt ((JSExpressionStatement expr _):xs) = do
+  val <- evalExpr expr
+  case xs of
+    [] -> return val
+    xs -> evalStmt xs
+evalStmt x = throwError ("not implemented stmt: " ++ (show x))
 
 evalExpr :: JSExpression -> Engine Value
+-- terminals
 evalExpr (JSDecimal _ s) = do
   incState
   return $ JSInt (read s)
+evalExpr (JSIdentifier _ s) = do
+  env <- ask
+  case lookupEnv s env of
+    Nothing -> throwError ("unbound variable: " ++ s)
+    Just val -> return val
+-- non-terminals
 evalExpr (JSExpressionBinary e1 op e2) = do
   incState
   e1' <- evalExpr e1
@@ -54,4 +71,8 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   case (e1', e2') of
     (JSInt i1, JSInt i2) -> return $ JSInt (i1 + i2)
     _ -> throwError "type error: addition expected ints"
-evalExpr _ = throwError "not implemented"
+evalExpr x = throwError ("not implemented expr: " ++ (show x))
+
+evalVarInitializer :: JSVarInitializer -> Engine Value
+evalVarInitializer (JSVarInit _ expr) = evalExpr expr
+evalVarInitializer (JSVarInitNone) = return JSUndefined
