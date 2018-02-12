@@ -3,7 +3,7 @@ module Bowser.JS.Engine
   ) where
 
 import Control.Monad.Identity
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State hiding (State)
 import Control.Monad.Writer
@@ -18,10 +18,10 @@ runJs ast = runEngine emptyEnv 0 (evalAst ast)
 -- engine
 
 type State = Integer
-type Engine a = ReaderT Env (ErrorT String (WriterT [String] (StateT State IO))) a
+type Engine a = ReaderT Env (ExceptT String (WriterT [String] (StateT State IO))) a
 
 runEngine :: Env -> State -> Engine a -> IO ((Either String a, [String]), State)
-runEngine env st ev = runStateT (runWriterT (runErrorT (runReaderT ev env))) st
+runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
 
 -- state
 
@@ -71,7 +71,8 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   case (e1', e2') of
     (JSInt i1, JSInt i2) -> return $ JSInt (i1 + i2)
     _ -> throwError "type error: addition expected ints"
-evalExpr x = throwError ("not implemented expr: " ++ (show x))
+evalExpr _ = throwError "not implemented expr"
+evalExpr x = throwError ("not implemented ast: " ++ (show x))
 
 evalVarInitializer :: JSVarInitializer -> Engine Value
 evalVarInitializer (JSVarInit _ expr) = evalExpr expr
