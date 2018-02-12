@@ -71,8 +71,7 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   case (e1', e2') of
     (JSInt i1, JSInt i2) -> return $ JSInt (i1 + i2)
     _ -> throwError "type error: addition expected ints"
-evalExpr _ = throwError "not implemented expr"
-evalExpr x = throwError ("not implemented ast: " ++ (show x))
+evalExpr x = throwError ("not implemented expr: " ++ (show x))
 
 evalVarInitializer :: JSVarInitializer -> Engine Value
 evalVarInitializer (JSVarInit _ expr) = evalExpr expr
