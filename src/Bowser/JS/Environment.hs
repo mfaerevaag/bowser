@@ -14,9 +14,10 @@ type Env = Map.Map Ident Value
 
 type Ident = String
 
--- TODO: implement all types
 data Value = JSUndefined
-           | JSInt Integer
+           | JSNull
+           | JSNumber Double
+           | JSBoolean Bool
            | JSString String
            deriving (Show)
 

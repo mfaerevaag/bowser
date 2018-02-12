@@ -57,7 +57,7 @@ evalExpr :: JSExpression -> Engine Value
 -- terminals
 evalExpr (JSDecimal _ s) = do
   incState
-  return $ JSInt (read s)
+  return $ JSNumber (read s)
 evalExpr (JSIdentifier _ s) = do
   env <- ask
   case lookupEnv s env of
@@ -69,7 +69,7 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   e1' <- evalExpr e1
   e2' <- evalExpr e2
   case (e1', e2') of
-    (JSInt i1, JSInt i2) -> return $ JSInt (i1 + i2)
+    (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
     _ -> throwError "type error: addition expected ints"
 evalExpr x = throwError ("not implemented expr: " ++ (show x))
 
