@@ -55,6 +55,9 @@ evalStmt x = throwError ("not implemented stmt: " ++ (show x))
 
 evalExpr :: JSExpression -> Engine Value
 -- terminals
+evalExpr (JSExpressionParen _ e _) = do
+  incState
+  evalExpr e
 evalExpr (JSDecimal _ s) = do
   incState
   return $ JSNumber (read s)
