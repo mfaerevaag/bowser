@@ -19,6 +19,7 @@ data Value = JSUndefined
            | JSNumber Double
            | JSBoolean Bool
            | JSString String
+           -- | JSSymbol -- NOTE: we'll save this for later
            deriving (Show)
 
 emptyEnv = Map.empty
