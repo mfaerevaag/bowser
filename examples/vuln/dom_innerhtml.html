@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>Bowser Test Portal</title>
+    </head>
+    <body>
+        <b>Injected div: </b><div id="foo"></div>
+
+        <script>
+         document.getElementById('foo').innerHTML = document.location.hash;
+        </script>
+
+        <hr>
+
+<pre style='color:#d1d1d1;background:#000000;'><span style='color:#d2cd86; '>&lt;</span>script<span style='color:#d2cd86; '>></span>
+    document<span style='color:#d2cd86; '>.</span>getElementById<span style='color:#d2cd86; '>(</span><span style='color:#02d045; '>'</span><span style='color:#00c4c4; '>foo</span><span style='color:#02d045; '>'</span><span style='color:#d2cd86; '>)</span><span style='color:#d2cd86; '>.</span>innerHTML <span style='color:#d2cd86; '>=</span> document<span style='color:#d2cd86; '>.</span>location<span style='color:#d2cd86; '>.</span>hash<span style='color:#b060b0; '>;</span>
+<span style='color:#d2cd86; '>&lt;</span><span style='color:#d2cd86; '>/</span>script<span style='color:#d2cd86; '>></span>
+</pre>
+    </body>
+</html>
