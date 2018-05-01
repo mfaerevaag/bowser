@@ -20,7 +20,7 @@ data Value = JSUndefined
            | JSBoolean Bool
            | JSString String
            -- | JSSymbol -- NOTE: we'll save this for later
-           deriving (Show)
+           deriving (Eq, Show)
 
 emptyEnv = Map.empty
 
