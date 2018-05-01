@@ -1,4 +1,4 @@
-module Bowser.JS.AST
+module Bowser.AST
   ( module Language.JavaScript.Parser.AST
   , JSAst
   , renderJs

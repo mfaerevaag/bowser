@@ -1,4 +1,4 @@
-module Bowser.JS.Environment
+module Bowser.Environment
   ( Env
   , Ident
   , Value (..)

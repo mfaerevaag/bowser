@@ -1,4 +1,4 @@
-module Bowser.JS.Parser
+module Bowser.Parser
   ( parseJs
   ) where
 

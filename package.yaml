@@ -24,8 +24,6 @@ library:
   source-dirs:          src
   dependencies:
   - containers
-  - hxt
-  - HandsomeSoup
   - language-javascript
 
 executables:

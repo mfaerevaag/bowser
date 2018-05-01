@@ -1,4 +1,4 @@
-module Bowser.JS.Engine
+module Bowser.Engine
   ( runJs
   ) where
 
@@ -8,8 +8,8 @@ import Control.Monad.Reader
 import Control.Monad.State hiding (State)
 import Control.Monad.Writer
 
-import Bowser.JS.AST
-import Bowser.JS.Environment
+import Bowser.AST
+import Bowser.Environment
 
 -- utility
 

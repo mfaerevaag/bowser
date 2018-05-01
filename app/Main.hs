@@ -2,9 +2,9 @@ module Main where
 
 import Text.Show.Pretty
 
-import Bowser.JS.Parser
-import Bowser.JS.Engine
-import Bowser.JS.AST
+import Bowser.Parser
+import Bowser.Engine
+import Bowser.AST
 
 main :: IO ()
 main = do
