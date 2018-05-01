@@ -1,4 +1,4 @@
-module Bowser.Test.Engine.Expression (exprTests) where
+module Bowser.Test.Engine.Expr (exprTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -6,7 +6,7 @@ import Bowser.Test.Helper
 
 import Bowser.Types
 
-exprTests = testGroup "Expression"
+exprTests = testGroup "Expr"
   [
     arithTests
   , logTests
