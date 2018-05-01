@@ -1,10 +1,10 @@
 <html>
     <head>
         <meta charset="utf-8"/>
-        <title>Bowser Test Portal</title>
+        <title>XSS Test Portal</title>
     </head>
     <body>
-        <h1>Bowser Test Portal</h1>
+        <h1>XSS Test Portal</h1>
 
         <script>
          document.write("<b>Current URL:</b> " + document.location);
@@ -46,6 +46,11 @@
                     <td>Reflected/Stored</td>
                     <td>Simulated</td>
                     <td><a href="vuln/simulated.html?foo=<script>alert('xss')</script>">simulated.html?foo=&lt;script&gt;alert('xss')&lt;/script&gt;</a></td>
+                </tr>
+                <tr>
+                    <td>Reflected/Stored</td>
+                    <td>Comment</td>
+                    <td><a href="vuln/polyglot.html">polyglot.html</a></td>
                 </tr>
             </tbody>
         </table>
