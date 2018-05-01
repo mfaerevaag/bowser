@@ -77,6 +77,19 @@ evalExpr (JSIdentifier _ s) = do
     Nothing -> throwError ("unbound variable: " ++ s)
     Just val -> return val
 -- non-terminals
+evalExpr (JSUnaryExpression op e) = do
+  incState
+  e' <- evalExpr e
+  case op of
+    JSUnaryOpMinus _ -> case e' of
+      (JSNumber n) -> return $ JSNumber (- n)
+      _ -> throwError $ err op
+    JSUnaryOpNot _ -> case e' of
+      (JSBoolean b) -> return $ JSBoolean (not b)
+      _ -> throwError $ err op
+    _ -> throwError ("not implemented operator: " ++ (show op))
+  where
+    err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
 evalExpr (JSExpressionBinary e1 op e2) = do
   incState
   e1' <- evalExpr e1
@@ -135,7 +148,7 @@ evalExpr (JSExpressionBinary e1 op e2) = do
       _ -> throwError $ err op
     _ -> throwError ("not implemented operator: " ++ (show op))
   where
-    err op' = ("type error: '" ++ (show op') ++ "' operator unexpected args")
+    err op' = ("type error: binary operator '" ++ (show op') ++ "' got unexpected args")
 evalExpr x = throwError ("not implemented expr: " ++ (show x))
 
 evalVarInitializer :: JSVarInitializer -> Engine Value

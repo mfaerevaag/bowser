@@ -16,6 +16,7 @@ arithTests = testGroup "Arithmetic"
   [
     testCase "add" $ t (JSNumber 3.0) "1 + 2"
   , testCase "sub" $ t (JSNumber (-1.0)) "1 - 2"
+  , testCase "neg" $ t (JSNumber (-1.0)) "-1"
   , testCase "concat" $ t (JSString "foobar") "'foo' + 'bar'"
   , testCase "cast int to string" $ t (JSString "1.0bar") "1 + 'bar'"
   , testCase "cast int to string" $ t (JSString "foo2.0") "'foo' + 2"
@@ -25,7 +26,9 @@ arithTests = testGroup "Arithmetic"
 
 logTests = testGroup "Logical"
   [
-    testCase "and" $ t (JSBoolean True) "true && true"
+    testCase "not" $ t (JSBoolean False) "! true"
+  , testCase "not" $ t (JSBoolean True) "!false"
+  , testCase "and" $ t (JSBoolean True) "true && true"
   , testCase "and" $ t (JSBoolean False) "false && true"
   , testCase "or" $ t (JSBoolean True) "true || false"
   , testCase "or" $ t (JSBoolean False) "false || false"
