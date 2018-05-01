@@ -76,14 +76,24 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   e1' <- evalExpr e1
   e2' <- evalExpr e2
   case op of
+    -- addition
     JSBinOpPlus _ -> case (e1', e2') of
       (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
       (JSNumber s1, JSString s2) -> return $ JSString ((show s1) ++ s2)
       (JSString s1, JSNumber s2) -> return $ JSString (s1 ++ (show s2))
       (JSString s1, JSString s2) -> return $ JSString (s1 ++ s2)
       _ -> throwError $ err op
+    -- subtraction
     JSBinOpMinus _ -> case (e1', e2') of
       (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 - i2)
+      _ -> throwError $ err op
+    -- multiplication
+    JSBinOpTimes _ -> case (e1', e2') of
+      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 * i2)
+      _ -> throwError $ err op
+    -- division
+    JSBinOpDivide _ -> case (e1', e2') of
+      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 / i2)
       _ -> throwError $ err op
     _ -> throwError ("not implemented operator: " ++ (show op))
   where
