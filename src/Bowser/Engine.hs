@@ -62,6 +62,12 @@ evalExpr (JSExpressionParen _ e _) = do
 evalExpr (JSDecimal _ s) = do
   incState
   return $ JSNumber (read s)
+evalExpr (JSLiteral _ s) = do
+  incState
+  case s of
+    "true" -> return $ JSBoolean True
+    "false" -> return $ JSBoolean False
+    _ -> throwError ("unknown literal: " ++ s)
 evalExpr (JSStringLiteral _ s) = do
   incState
   return $ JSString (strip s)
@@ -94,6 +100,38 @@ evalExpr (JSExpressionBinary e1 op e2) = do
     -- division
     JSBinOpDivide _ -> case (e1', e2') of
       (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 / i2)
+      _ -> throwError $ err op
+    -- and
+    JSBinOpAnd _ -> case (e1', e2') of
+      (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 && b2)
+      _ -> throwError $ err op
+    -- or
+    JSBinOpOr _ -> case (e1', e2') of
+      (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 || b2)
+      _ -> throwError $ err op
+    -- equal
+    JSBinOpEq _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 == n2)
+      _ -> throwError $ err op
+    -- not equal
+    JSBinOpNeq _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 /= n2)
+      _ -> throwError $ err op
+    -- less than
+    JSBinOpLt _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 < n2)
+      _ -> throwError $ err op
+    -- less or equal
+    JSBinOpLe _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 <= n2)
+      _ -> throwError $ err op
+    -- greater than
+    JSBinOpGt _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 > n2)
+      _ -> throwError $ err op
+    -- greater or equal
+    JSBinOpGe _ -> case (e1', e2') of
+      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 >= n2)
       _ -> throwError $ err op
     _ -> throwError ("not implemented operator: " ++ (show op))
   where

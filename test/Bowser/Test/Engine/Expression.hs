@@ -9,15 +9,36 @@ import Bowser.Environment
 exprTests = testGroup "Expression"
   [
     arithTests
+  , logTests
   ]
 
 arithTests = testGroup "Arithmetic"
   [
     testCase "add" $ t (JSNumber 3.0) "1 + 2"
-  , testCase "subtract" $ t (JSNumber (-1.0)) "1 - 2"
+  , testCase "sub" $ t (JSNumber (-1.0)) "1 - 2"
   , testCase "concat" $ t (JSString "foobar") "'foo' + 'bar'"
-  , testCase "cast 1" $ t (JSString "1.0bar") "1 + 'bar'"
-  , testCase "cast 2" $ t (JSString "foo2.0") "'foo' + 2"
+  , testCase "cast int to string" $ t (JSString "1.0bar") "1 + 'bar'"
+  , testCase "cast int to string" $ t (JSString "foo2.0") "'foo' + 2"
   , testCase "mult" $ t (JSNumber 21.0) "3 * 7"
   , testCase "div" $ t (JSNumber 7.0) "42 / 6"
+  ]
+
+logTests = testGroup "Logical"
+  [
+    testCase "and" $ t (JSBoolean True) "true && true"
+  , testCase "and" $ t (JSBoolean False) "false && true"
+  , testCase "or" $ t (JSBoolean True) "true || false"
+  , testCase "or" $ t (JSBoolean False) "false || false"
+  , testCase "eq" $ t (JSBoolean True) "1 == 1"
+  , testCase "eq" $ t (JSBoolean False) "1 == 2"
+  , testCase "ne" $ t (JSBoolean True) "1 != 2"
+  , testCase "ne" $ t (JSBoolean False) "1 != 1"
+  , testCase "lt" $ t (JSBoolean True) "1 < 2"
+  , testCase "lt" $ t (JSBoolean False) "2 < 2"
+  , testCase "le" $ t (JSBoolean True) "1 <= 1"
+  , testCase "le" $ t (JSBoolean False) "1 <= 0"
+  , testCase "gt" $ t (JSBoolean True) "2 > 1"
+  , testCase "gt" $ t (JSBoolean False) "2 > 2"
+  , testCase "ge" $ t (JSBoolean True) "1 >= 1"
+  , testCase "ge" $ t (JSBoolean False) "0 >= 1"
   ]
