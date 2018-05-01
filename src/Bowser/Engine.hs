@@ -10,6 +10,7 @@ import Control.Monad.Writer
 
 import Bowser.AST
 import Bowser.Environment
+import Bowser.Helper
 
 -- utility
 
@@ -61,6 +62,9 @@ evalExpr (JSExpressionParen _ e _) = do
 evalExpr (JSDecimal _ s) = do
   incState
   return $ JSNumber (read s)
+evalExpr (JSStringLiteral _ s) = do
+  incState
+  return $ JSString (strip s)
 evalExpr (JSIdentifier _ s) = do
   env <- ask
   case lookupEnv s env of
@@ -71,9 +75,17 @@ evalExpr (JSExpressionBinary e1 op e2) = do
   incState
   e1' <- evalExpr e1
   e2' <- evalExpr e2
-  case (e1', e2') of
-    (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
-    _ -> throwError "type error: addition expected ints"
+  case op of
+    JSBinOpPlus _ -> case (e1', e2') of
+      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
+      (JSNumber s1, JSString s2) -> return $ JSString ((show s1) ++ s2)
+      (JSString s1, JSNumber s2) -> return $ JSString (s1 ++ (show s2))
+      (JSString s1, JSString s2) -> return $ JSString (s1 ++ s2)
+      _ -> throwError "type error: + operator unexpected args"
+    JSBinOpMinus _ -> case (e1', e2') of
+      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 - i2)
+      _ -> throwError "type error: - operator unexpected args"
+    _ -> throwError ("type error: unexpected operator " ++ (show op))
 evalExpr x = throwError ("not implemented expr: " ++ (show x))
 
 evalVarInitializer :: JSVarInitializer -> Engine Value

@@ -18,6 +18,9 @@ wrap e s = do
 
 engineTests = testGroup "Engine"
   [
-    testCase "Binary expr" $ wrap (JSNumber 3.0) "1 + 2"
-  , testCase "Binary expr" $ wrap (JSNumber (-1.0)) "1 - 2"
+    testCase "Binary expr add" $ wrap (JSNumber 3.0) "1 + 2"
+  , testCase "Binary expr subtract" $ wrap (JSNumber (-1.0)) "1 - 2"
+  , testCase "Binary expr concat" $ wrap (JSString "foobar") "'foo' + 'bar'"
+  , testCase "Binary expr concat cast 1" $ wrap (JSString "1.0bar") "1 + 'bar'"
+  , testCase "Binary expr concat cast 2" $ wrap (JSString "foo2.0") "'foo' + 2"
   ]
