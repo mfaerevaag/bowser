@@ -1,7 +1,8 @@
 module Bowser.Parser
-  ( parseJs
+  ( parseFile
+  , parseString
   ) where
 
 import Language.JavaScript.Parser.Parser
 
-parseJs = parseFile
+parseString = readJs

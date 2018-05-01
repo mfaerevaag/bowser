@@ -9,13 +9,13 @@ import Bowser.AST
 main :: IO ()
 main = do
   putStrLn "ast:"
-  ast <- parseJs path
+  ast <- parseFile path
   pPrint ast
 
   putStrLn ""
 
   putStrLn "return:"
-  res <- runJs ast
+  res <- eval ast
   pPrint res
 
   where

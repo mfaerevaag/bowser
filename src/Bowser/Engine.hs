@@ -1,5 +1,5 @@
 module Bowser.Engine
-  ( runJs
+  ( eval
   ) where
 
 import Control.Monad.Identity
@@ -13,7 +13,7 @@ import Bowser.Environment
 
 -- utility
 
-runJs ast = runEngine emptyEnv 0 (evalAst ast)
+eval ast = runEngine emptyEnv 0 (evalAst ast)
 
 -- engine
 
