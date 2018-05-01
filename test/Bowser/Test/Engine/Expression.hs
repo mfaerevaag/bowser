@@ -4,7 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Bowser.Test.Helper
 
-import Bowser.Environment
+import Bowser.Types
 
 exprTests = testGroup "Expression"
   [

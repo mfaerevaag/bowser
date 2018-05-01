@@ -9,19 +9,19 @@ import Control.Monad.State hiding (State)
 import Control.Monad.Writer
 
 import Bowser.AST
-import Bowser.Environment
+import Bowser.Types
 import Bowser.Helper
 
 -- utility
 
-eval ast = runEngine emptyEnv 0 (evalAst ast)
+eval ast = runEngine emptyScope 0 (evalAst ast)
 
 -- engine
 
 type State = Integer
-type Engine a = ReaderT Env (ExceptT String (WriterT [String] (StateT State IO))) a
+type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State IO))) a
 
-runEngine :: Env -> State -> Engine a -> IO ((Either String a, [String]), State)
+runEngine :: Scope -> State -> Engine a -> IO ((Either String a, [String]), State)
 runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
 
 -- state
@@ -45,7 +45,7 @@ evalStmt ((JSVariable _ clist _):xs) = case clist of
   JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
     val <- evalVarInitializer init
     env <- ask
-    local (const (insertEnv id val env)) (evalStmt xs)
+    local (const (insertScope id val env)) (evalStmt xs)
   otherwise -> throwError "not implemented TODO"
 evalStmt ((JSExpressionStatement expr _):xs) = do
   val <- evalExpr expr
@@ -73,7 +73,7 @@ evalExpr (JSStringLiteral _ s) = do
   return $ JSString (strip s)
 evalExpr (JSIdentifier _ s) = do
   env <- ask
-  case lookupEnv s env of
+  case lookupScope s env of
     Nothing -> throwError ("unbound variable: " ++ s)
     Just val -> return val
 -- unary expression

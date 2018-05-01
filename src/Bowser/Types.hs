@@ -1,18 +1,18 @@
-module Bowser.Environment
-  ( Env
-  , Ident
+module Bowser.Types
+  ( Ident
   , Value (..)
-  , emptyEnv
-  , lookupEnv
-  , insertEnv
+  , Scope
+  , emptyScope
+  , lookupScope
+  , insertScope
   ) where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-type Env = Map.Map Ident Value
-
 type Ident = String
+
+type Scope = Map.Map Ident Value
 
 data Value = JSUndefined
            | JSNull
@@ -22,8 +22,8 @@ data Value = JSUndefined
            -- | JSSymbol -- NOTE: we'll save this for later
            deriving (Eq, Show)
 
-emptyEnv = Map.empty
+emptyScope = Map.empty
 
-lookupEnv id env = Map.lookup id env
+lookupScope id env = Map.lookup id env
 
-insertEnv id val env = Map.insert id val env
+insertScope id val env = Map.insert id val env
