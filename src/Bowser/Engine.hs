@@ -113,6 +113,16 @@ evalExpr expr = do
                               ) (consumeCommaTrailingList clist)
       return $ newObject pairs
 
+    -- member
+    (JSMemberDot (JSIdentifier _ id) _ (JSIdentifier _ mem)) -> do
+      obj <- case lookupScope scope id of
+        Nothing -> throwError ("unbound variable: " ++ id)
+        Just val -> return val
+      val <- case lookupScope (props obj) mem of
+        Nothing -> return JSUndefined
+        Just val -> return val
+      return val
+
     -- unary expression
     (JSUnaryExpression op e) -> do
       e' <- evalExpr e
