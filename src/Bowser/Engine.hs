@@ -104,6 +104,15 @@ evalExpr expr = do
       "false" -> return $ JSBoolean False
       _ -> throwError ("unknown literal: " ++ s)
 
+    -- object literal
+    (JSObjectLiteral _ clist _) -> do
+      st <- get
+      pairs <- sequence $ map (\(JSPropertyNameandValue (JSPropertyIdent _ id) _ [e]) -> do
+                                  val <- evalExpr e
+                                  return (id, val)
+                              ) (consumeCommaTrailingList clist)
+      return $ newObject pairs
+
     -- unary expression
     (JSUnaryExpression op e) -> do
       e' <- evalExpr e
