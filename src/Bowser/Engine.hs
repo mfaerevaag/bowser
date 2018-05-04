@@ -2,7 +2,6 @@ module Bowser.Engine
   ( eval
   ) where
 
-import Text.Show.Pretty (ppShow)
 import Control.Monad.Identity
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -13,19 +12,19 @@ import Bowser.AST
 import Bowser.Types
 import Bowser.Helper
 
--- utility
-
-eval ast = runEngine emptyScope 0 (evalAst ast)
 
 -- engine
 
+eval ast = runEngine emptyScope 0 (evalAst ast)
+
 type State = Integer
+             -- Environment    Exception       Logging           State
 type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State IO))) a
 
 runEngine :: Scope -> State -> Engine a -> IO ((Either String a, [String]), State)
 runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
 
--- state
+-- utility
 
 emptyState :: State
 emptyState = 0
@@ -34,6 +33,11 @@ incState :: (Num s, MonadState s m) => m()
 incState = do
   st <- get
   put (st + 1)
+
+logScope = do
+  st <- get
+  scope <- ask
+  tell [(show st) ++ ": " ++ (drop 9 (show scope))]
 
 -- eval
 
@@ -45,8 +49,8 @@ evalAst x = throwError ("not implemented ast: " ++ (show x))
 
 evalStmt :: [JSStatement] -> Engine Value
 evalStmt ss = do
+  logScope
   scope <- ask
-  tell [(ppShow scope)]
   case ss of
 
     -- nothing
