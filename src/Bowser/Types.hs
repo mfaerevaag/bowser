@@ -31,9 +31,9 @@ data Value = JSUndefined
 
 emptyScope = Map.empty
 
-lookupScope id env = Map.lookup id env
+lookupScope scope id = Map.lookup id scope
 
-insertScope id val env = Map.insert id val env
+insertScope scope id val = Map.insert id val scope
 
 -- object
 

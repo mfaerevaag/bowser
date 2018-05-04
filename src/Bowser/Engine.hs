@@ -63,7 +63,7 @@ evalStmt ss = do
     ((JSVariable _ clist _):ss) -> case clist of
       JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
         val <- evalVarInitializer init
-        local (const (insertScope id val scope)) (evalStmt ss)
+        local (const (insertScope scope id val)) (evalStmt ss)
       JSLCons clist' _ x -> evalStmt ((wrap clist'):(wrap (JSLOne x)):ss)
         where wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
 
@@ -91,7 +91,7 @@ evalExpr expr = do
     (JSDecimal _ s) -> return $ JSNumber (read s)
 
     -- ident
-    (JSIdentifier _ s) -> case lookupScope s scope of
+    (JSIdentifier _ s) -> case lookupScope scope s of
       Nothing -> throwError ("unbound variable: " ++ s)
       Just val -> return val
 
