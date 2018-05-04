@@ -7,6 +7,9 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State hiding (State)
 import Control.Monad.Writer
+-- debug
+import Text.Show.Pretty (ppShow)
+import Debug.Trace
 
 import Bowser.AST
 import Bowser.Types
@@ -57,11 +60,12 @@ evalStmt ss = do
     [] -> return $ JSUndefined
 
     -- variable
-    ((JSVariable _ clist _):xs) -> case clist of
+    ((JSVariable _ clist _):ss) -> case clist of
       JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
         val <- evalVarInitializer init
-        local (const (insertScope id val scope)) (evalStmt xs)
-      otherwise -> throwError "not implemented TODO"
+        local (const (insertScope id val scope)) (evalStmt ss)
+      JSLCons clist' _ x -> evalStmt ((wrap clist'):(wrap (JSLOne x)):ss)
+        where wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
 
     -- expression
     ((JSExpressionStatement expr _):xs) -> do
