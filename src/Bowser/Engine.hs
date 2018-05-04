@@ -2,6 +2,7 @@ module Bowser.Engine
   ( eval
   ) where
 
+import Text.Show.Pretty (ppShow)
 import Control.Monad.Identity
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -34,124 +35,140 @@ incState = do
   st <- get
   put (st + 1)
 
--- interpreter
+-- eval
 
 evalAst :: JSAst -> Engine Value
 evalAst (JSAstProgram stmts _) = evalStmt stmts
 evalAst x = throwError ("not implemented ast: " ++ (show x))
 
+-- statement
+
 evalStmt :: [JSStatement] -> Engine Value
-evalStmt ((JSVariable _ clist _):xs) = case clist of
-  JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
-    val <- evalVarInitializer init
-    env <- ask
-    local (const (insertScope id val env)) (evalStmt xs)
-  otherwise -> throwError "not implemented TODO"
-evalStmt ((JSExpressionStatement expr _):xs) = do
-  val <- evalExpr expr
-  case xs of
-    [] -> return val
-    xs -> evalStmt xs
-evalStmt x = throwError ("not implemented stmt: " ++ (show x))
+evalStmt ss = do
+  scope <- ask
+  tell [(ppShow scope)]
+  case ss of
+
+    -- variable
+    ((JSVariable _ clist _):xs) -> case clist of
+      JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
+        val <- evalVarInitializer init
+        local (const (insertScope id val scope)) (evalStmt xs)
+      otherwise -> throwError "not implemented TODO"
+
+    -- expression
+    ((JSExpressionStatement expr _):xs) -> do
+      val <- evalExpr expr
+      case xs of
+        [] -> return val
+        xs -> evalStmt xs
+
+    x -> throwError ("not implemented stmt: " ++ (show x))
+
+-- expression
 
 evalExpr :: JSExpression -> Engine Value
--- terminals
-evalExpr (JSExpressionParen _ e _) = do
+evalExpr expr = do
   incState
-  evalExpr e
-evalExpr (JSDecimal _ s) = do
-  incState
-  return $ JSNumber (read s)
-evalExpr (JSLiteral _ s) = do
-  incState
-  case s of
-    "true" -> return $ JSBoolean True
-    "false" -> return $ JSBoolean False
-    _ -> throwError ("unknown literal: " ++ s)
-evalExpr (JSStringLiteral _ s) = do
-  incState
-  return $ JSString (strip s)
-evalExpr (JSIdentifier _ s) = do
-  env <- ask
-  case lookupScope s env of
-    Nothing -> throwError ("unbound variable: " ++ s)
-    Just val -> return val
--- unary expression
-evalExpr (JSUnaryExpression op e) = do
-  incState
-  e' <- evalExpr e
-  case op of
-    JSUnaryOpMinus _ -> case e' of
-      (JSNumber n) -> return $ JSNumber (- n)
-      _ -> throwError $ err op
-    JSUnaryOpNot _ -> case e' of
-      (JSBoolean b) -> return $ JSBoolean (not b)
-      _ -> throwError $ err op
-    _ -> throwError ("not implemented operator: " ++ (show op))
-  where
-    err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
--- binary expression
-evalExpr (JSExpressionBinary e1 op e2) = do
-  incState
-  e1' <- evalExpr e1
-  e2' <- evalExpr e2
-  case op of
-    -- addition
-    JSBinOpPlus _ -> case (e1', e2') of
-      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
-      (JSNumber s1, JSString s2) -> return $ JSString ((show s1) ++ s2)
-      (JSString s1, JSNumber s2) -> return $ JSString (s1 ++ (show s2))
-      (JSString s1, JSString s2) -> return $ JSString (s1 ++ s2)
-      _ -> throwError $ err op
-    -- subtraction
-    JSBinOpMinus _ -> case (e1', e2') of
-      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 - i2)
-      _ -> throwError $ err op
-    -- multiplication
-    JSBinOpTimes _ -> case (e1', e2') of
-      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 * i2)
-      _ -> throwError $ err op
-    -- division
-    JSBinOpDivide _ -> case (e1', e2') of
-      (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 / i2)
-      _ -> throwError $ err op
-    -- and
-    JSBinOpAnd _ -> case (e1', e2') of
-      (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 && b2)
-      _ -> throwError $ err op
-    -- or
-    JSBinOpOr _ -> case (e1', e2') of
-      (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 || b2)
-      _ -> throwError $ err op
-    -- equal
-    JSBinOpEq _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 == n2)
-      _ -> throwError $ err op
-    -- not equal
-    JSBinOpNeq _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 /= n2)
-      _ -> throwError $ err op
-    -- less than
-    JSBinOpLt _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 < n2)
-      _ -> throwError $ err op
-    -- less or equal
-    JSBinOpLe _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 <= n2)
-      _ -> throwError $ err op
-    -- greater than
-    JSBinOpGt _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 > n2)
-      _ -> throwError $ err op
-    -- greater or equal
-    JSBinOpGe _ -> case (e1', e2') of
-      (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 >= n2)
-      _ -> throwError $ err op
-    _ -> throwError ("not implemented operator: " ++ (show op))
-  where
-    err op' = ("type error: binary operator '" ++ (show op') ++ "' got unexpected args")
--- otherwise
-evalExpr x = throwError ("not implemented expr: " ++ (show x))
+  scope <- ask
+  case expr of
+
+    -- parens
+    (JSExpressionParen _ e _) -> evalExpr e
+
+    -- number
+    (JSDecimal _ s) -> return $ JSNumber (read s)
+
+    -- ident
+    (JSIdentifier _ s) -> case lookupScope s scope of
+      Nothing -> throwError ("unbound variable: " ++ s)
+      Just val -> return val
+
+    -- string literal
+    (JSStringLiteral _ s) -> return $ JSString (strip s)
+
+    -- other literal
+    (JSLiteral _ s) -> case s of
+      "true" -> return $ JSBoolean True
+      "false" -> return $ JSBoolean False
+      _ -> throwError ("unknown literal: " ++ s)
+
+    -- unary expression
+    (JSUnaryExpression op e) -> do
+      e' <- evalExpr e
+      case op of
+        JSUnaryOpMinus _ -> case e' of
+          (JSNumber n) -> return $ JSNumber (- n)
+          _ -> throwError $ err op
+        JSUnaryOpNot _ -> case e' of
+          (JSBoolean b) -> return $ JSBoolean (not b)
+          _ -> throwError $ err op
+        _ -> throwError ("not implemented operator: " ++ (show op))
+      where
+        err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
+
+    -- binary expression
+    (JSExpressionBinary e1 op e2) -> do
+      e1' <- evalExpr e1
+      e2' <- evalExpr e2
+      case op of
+        -- addition
+        JSBinOpPlus _ -> case (e1', e2') of
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
+          (JSNumber s1, JSString s2) -> return $ JSString ((show s1) ++ s2)
+          (JSString s1, JSNumber s2) -> return $ JSString (s1 ++ (show s2))
+          (JSString s1, JSString s2) -> return $ JSString (s1 ++ s2)
+          _ -> throwError $ err op
+        -- subtraction
+        JSBinOpMinus _ -> case (e1', e2') of
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 - i2)
+          _ -> throwError $ err op
+        -- multiplication
+        JSBinOpTimes _ -> case (e1', e2') of
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 * i2)
+          _ -> throwError $ err op
+        -- division
+        JSBinOpDivide _ -> case (e1', e2') of
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 / i2)
+          _ -> throwError $ err op
+        -- and
+        JSBinOpAnd _ -> case (e1', e2') of
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 && b2)
+          _ -> throwError $ err op
+        -- or
+        JSBinOpOr _ -> case (e1', e2') of
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 || b2)
+          _ -> throwError $ err op
+        -- equal
+        JSBinOpEq _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 == n2)
+          _ -> throwError $ err op
+        -- not equal
+        JSBinOpNeq _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 /= n2)
+          _ -> throwError $ err op
+        -- less than
+        JSBinOpLt _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 < n2)
+          _ -> throwError $ err op
+        -- less or equal
+        JSBinOpLe _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 <= n2)
+          _ -> throwError $ err op
+        -- greater than
+        JSBinOpGt _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 > n2)
+          _ -> throwError $ err op
+        -- greater or equal
+        JSBinOpGe _ -> case (e1', e2') of
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 >= n2)
+          _ -> throwError $ err op
+        _ -> throwError ("not implemented operator: " ++ (show op))
+      where
+        err op' = ("type error: binary operator '" ++ (show op') ++ "' got unexpected args")
+
+    -- otherwise
+    x -> throwError ("not implemented expr: " ++ (show x))
 
 evalVarInitializer :: JSVarInitializer -> Engine Value
 evalVarInitializer (JSVarInit _ expr) = evalExpr expr
