@@ -49,6 +49,9 @@ evalStmt ss = do
   tell [(ppShow scope)]
   case ss of
 
+    -- nothing
+    [] -> return $ JSUndefined
+
     -- variable
     ((JSVariable _ clist _):xs) -> case clist of
       JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
