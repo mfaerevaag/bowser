@@ -4,3 +4,15 @@
 # bowser
 
 Simple framework for testing security mechanisms in JavaScript interpreters.
+
+## Running
+
+The project uses stack, so to build, simply:
+
+    # stack build
+
+To run, try:
+
+    # stack exec bowser-exe -- --file ./examples/fib_rec.js --threshold 1000000 --verbose
+
+For more examples, see `examples/`.
