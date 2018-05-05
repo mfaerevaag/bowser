@@ -36,6 +36,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - bowser
+    - parseargs
 
 tests:
   bowser-test:
