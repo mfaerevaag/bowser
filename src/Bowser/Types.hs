@@ -76,7 +76,7 @@ instance Show Value where
   show (JSBoolean b) = show b
   show (JSString s) = s
   show (JSObject props native) = case native of
-    SimpleObj -> "{ " ++ (foldr (\(key, val) acc ->
-                                    key ++ ": " ++ (show val) ++ ", "
-                                ) "" (Map.toList props)) ++ " }"
+    SimpleObj -> "{ " ++ (drop 2 (foldr (\(key, val) acc ->
+                                            ", " ++ key ++ ": " ++ (show val) ++ acc
+                                        ) "" (Map.toList props))) ++ " }"
     FuncObj name _ _ -> "[Function: " ++ (fromMaybe "anonymous" name) ++ "]"
