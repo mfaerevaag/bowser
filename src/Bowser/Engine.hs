@@ -67,10 +67,13 @@ evalStmt ss = do
     -- variable
     (JSVariable _ clist _):ss -> case clist of
       JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
-        val <- evalVarInitializer init
+        val <- case init of
+          JSVarInit _ expr -> evalExpr expr
+          JSVarInitNone -> return JSUndefined
         local (const (insertScope scope id val)) (evalStmt ss)
       JSLCons clist' _ x -> evalStmt ((wrap clist'):(wrap (JSLOne x)):ss)
-        where wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
+        where
+          wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
 
     -- expression
     (JSExpressionStatement expr _):xs -> do
@@ -228,7 +231,3 @@ evalExpr expr = do
 
     -- otherwise
     x -> throwError ("not implemented expr: " ++ (show x))
-
-evalVarInitializer :: JSVarInitializer -> Engine Value
-evalVarInitializer (JSVarInit _ expr) = evalExpr expr
-evalVarInitializer (JSVarInitNone) = return JSUndefined
