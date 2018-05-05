@@ -267,5 +267,11 @@ evalExpr expr = do
       where
         err op' = ("type error: binary operator '" ++ (show op') ++ "' got unexpected args")
 
+    -- expression postfix
+    JSExpressionPostfix e op -> case op of
+      JSUnaryOpIncr _ -> evalExpr (JSExpressionBinary e (JSBinOpPlus JSNoAnnot) (JSDecimal JSNoAnnot "1"))
+      JSUnaryOpDecr _ -> evalExpr (JSExpressionBinary e (JSBinOpMinus JSNoAnnot) (JSDecimal JSNoAnnot "1"))
+      _ -> throwError ("not implemented post-fix operator: " ++ (show op))
+
     -- otherwise
     x -> throwError ("not implemented expr: " ++ (show x))
