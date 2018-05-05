@@ -85,6 +85,12 @@ evalStmt ss = do
         [] -> return val
         xs -> evalStmt xs
 
+    -- func
+    (JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ ss _) _):xs -> do
+      local (const (insertScope scope id (newFunc (Just id) params ss))) (evalStmt xs)
+      where
+        params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
+
     -- call
     (JSMethodCall (JSIdentifier _ id) _ clist _ _):xs -> do
       func <- case lookupScope scope id of
@@ -169,9 +175,12 @@ evalExpr expr = do
         (evalStmt (code (native func)))
 
     -- func literal
-    JSFunctionExpression _ _ _ clist _ (JSBlock _ ss _) -> return $ newFunc params ss
+    JSFunctionExpression _ id _ clist _ (JSBlock _ ss _) -> return $ newFunc name params ss
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
+        name = case id of
+          JSIdentName _ s -> Just s
+          JSIdentNone -> Nothing
 
     -- unary expression
     JSUnaryExpression op e -> do

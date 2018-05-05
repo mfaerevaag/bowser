@@ -12,6 +12,7 @@ module Bowser.Types
   , valueToBool
   ) where
 
+import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Bowser.AST
@@ -32,7 +33,8 @@ data Value = JSUndefined
            deriving (Show, Eq)
 
 data NativeObj = SimpleObj
-               | FuncObj { params :: [Ident]
+               | FuncObj { name :: Maybe String
+                         , params :: [Ident]
                          , code  :: [JSStatement]
                          }
                deriving (Show, Eq)
@@ -52,8 +54,11 @@ emptyObject = JSObject Map.empty
 newObject :: [(Ident, Value)] -> Value
 newObject props = JSObject { props = (Map.fromList props), native = SimpleObj }
 
-newFunc :: [Ident] -> [JSStatement] -> Value
-newFunc params stmts = JSObject { props = emptyScope, native = FuncObj { params = params, code = stmts } }
+newFunc :: Maybe String -> [Ident]-> [JSStatement] -> Value
+newFunc name params stmts = JSObject { props = emptyScope
+                                     , native = FuncObj { name = name
+                                                        , params = params
+                                                        , code = stmts } }
 
 -- type helper
 
