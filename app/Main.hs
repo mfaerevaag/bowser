@@ -15,8 +15,9 @@ main = do
   putStrLn ""
 
   putStrLn "return:"
-  res <- eval ast
+  res <- eval ast threshold
   pPrint res
 
   where
-    path = "examples/foo.js"
+    path = "examples/fib_rec.js"
+    threshold = 1000000

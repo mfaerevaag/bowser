@@ -18,9 +18,9 @@ import Bowser.Helper
 
 -- engine
 
-eval ast = runEngine emptyScope 0 (evalAst ast)
+eval ast threshold = runEngine emptyScope (newState threshold) (evalAst ast)
 
-type State = Integer
+type State = (Integer, Integer)
              -- Environment    Exception       Logging           State
 type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State IO))) a
 
@@ -29,16 +29,16 @@ runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
 
 -- utility
 
-emptyState :: State
-emptyState = 0
+newState :: Integer -> State
+newState threshold = (0, threshold)
 
 -- incState :: (Num s, MonadState s m) => m()
 incState = do
-  st <- get
-  put (st + 1)
-  if (st > 1000000)
+  (st, threshold) <- get
+  -- put (st + 1)
+  if (st > threshold)
     then throwError "eval stopped: step threshold reached"
-    else put (st + 1)
+    else put ((st + 1), threshold)
 
 -- logScope = do
 --   st <- get
