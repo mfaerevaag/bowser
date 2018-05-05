@@ -78,6 +78,16 @@ evalStmt ss = do
         where
           wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
 
+    -- assign
+    (JSAssignStatement lhs@(JSIdentifier _ id) op rhs _):xs -> do
+      val <- case op of
+        JSAssign _ -> evalExpr rhs
+        JSPlusAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpPlus JSNoAnnot) rhs)
+        JSMinusAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpMinus JSNoAnnot) rhs)
+        JSTimesAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpTimes JSNoAnnot) rhs)
+        JSDivideAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpDivide JSNoAnnot) rhs)
+      local (const (insertScope scope id val)) (evalStmt xs)
+
     -- expression
     (JSExpressionStatement expr _):xs -> do
       val <- evalExpr expr
