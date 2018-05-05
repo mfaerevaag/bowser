@@ -120,6 +120,7 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
+    JSIdentifier _ "undefined" -> return JSUndefined
     JSIdentifier _ s -> case lookupScope scope s of
       Nothing -> throwError ("unbound variable: " ++ s)
       Just val -> return val
@@ -129,6 +130,7 @@ evalExpr expr = do
 
     -- other literal
     JSLiteral _ s -> case s of
+      "null" -> return JSNull
       "true" -> return $ JSBoolean True
       "false" -> return $ JSBoolean False
       _ -> throwError ("unknown literal: " ++ s)
@@ -161,7 +163,7 @@ evalExpr expr = do
       local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
         (evalStmt (code (native func)))
 
-    -- -- func literal
+    -- func literal
     JSFunctionExpression _ _ _ clist _ (JSBlock _ ss _) -> return $ newFunc params ss
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
