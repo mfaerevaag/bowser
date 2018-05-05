@@ -115,6 +115,11 @@ evalStmt ss = do
       res <- evalExpr e
       evalStmt $ if (valueToBool res) then s1:xs else s2:xs
 
+    -- while
+    x@(JSWhile _ _ e _ s):xs -> do
+      res <- evalExpr e
+      evalStmt $ if (valueToBool res) then s:x:xs else xs
+
     x -> throwError ("not implemented stmt: " ++ (show x))
 
 -- expression
