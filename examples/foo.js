@@ -1,6 +1,8 @@
-var fib = function(num) {
-    if (num <= 1) return 1;
+var foo = {
+    a: 1 + 2,
+    b: "asdf"
+};
+var bar = function(a, b) { return a + b; };
 
-    return fib(num - 1) + fib(num - 2);
-}
-fib(5)
+print(foo);
+print(bar);
