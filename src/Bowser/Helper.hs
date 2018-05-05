@@ -25,7 +25,7 @@ trim = f . f
 
 consumeCommaList :: (JSCommaList a) -> [a]
 consumeCommaList clist = case clist of
-  (JSLCons xs _ x) -> x:(consumeCommaList xs)
+  (JSLCons xs _ x) -> (consumeCommaList xs)++[x]
   (JSLOne x) -> [x]
   (JSLNil) -> []
 

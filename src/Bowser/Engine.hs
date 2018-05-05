@@ -59,8 +59,13 @@ evalStmt ss = do
     -- nothing
     [] -> return $ JSUndefined
 
+    -- return
+    (JSReturn _ me _):ss -> case me of
+      Nothing -> return JSUndefined
+      Just e -> evalExpr e
+
     -- variable
-    ((JSVariable _ clist _):ss) -> case clist of
+    (JSVariable _ clist _):ss -> case clist of
       JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
         val <- evalVarInitializer init
         local (const (insertScope scope id val)) (evalStmt ss)
@@ -68,11 +73,21 @@ evalStmt ss = do
         where wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
 
     -- expression
-    ((JSExpressionStatement expr _):xs) -> do
+    (JSExpressionStatement expr _):xs -> do
       val <- evalExpr expr
       case xs of
         [] -> return val
         xs -> evalStmt xs
+
+    -- call
+    (JSMethodCall (JSIdentifier _ id) _ clist _ _):xs -> do
+      func <- case lookupScope scope id of
+        Nothing -> throwError ("undefined function: " ++ id)
+        Just val -> return val
+      args <- sequence $ map evalExpr (consumeCommaList clist)
+      pairs <- return $ zip (params (native func)) args
+      local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
+        (evalStmt ((code (native func))++ss))
 
     x -> throwError ("not implemented stmt: " ++ (show x))
 
@@ -85,28 +100,27 @@ evalExpr expr = do
   case expr of
 
     -- parens
-    (JSExpressionParen _ e _) -> evalExpr e
+    JSExpressionParen _ e _ -> evalExpr e
 
     -- number
-    (JSDecimal _ s) -> return $ JSNumber (read s)
+    JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    (JSIdentifier _ s) -> case lookupScope scope s of
+    JSIdentifier _ s -> case lookupScope scope s of
       Nothing -> throwError ("unbound variable: " ++ s)
       Just val -> return val
 
     -- string literal
-    (JSStringLiteral _ s) -> return $ JSString (strip s)
+    JSStringLiteral _ s -> return $ JSString (strip s)
 
     -- other literal
-    (JSLiteral _ s) -> case s of
+    JSLiteral _ s -> case s of
       "true" -> return $ JSBoolean True
       "false" -> return $ JSBoolean False
       _ -> throwError ("unknown literal: " ++ s)
 
     -- object literal
-    (JSObjectLiteral _ clist _) -> do
-      st <- get
+    JSObjectLiteral _ clist _ -> do
       pairs <- sequence $ map (\(JSPropertyNameandValue (JSPropertyIdent _ id) _ [e]) -> do
                                   val <- evalExpr e
                                   return (id, val)
@@ -114,7 +128,7 @@ evalExpr expr = do
       return $ newObject pairs
 
     -- member
-    (JSMemberDot (JSIdentifier _ id) _ (JSIdentifier _ mem)) -> do
+    JSMemberDot (JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
       obj <- case lookupScope scope id of
         Nothing -> throwError ("unbound variable: " ++ id)
         Just val -> return val
@@ -123,8 +137,23 @@ evalExpr expr = do
         Just val -> return val
       return val
 
+    -- call
+    JSMemberExpression (JSIdentifier _ id) _ clist _ -> do
+      func <- case lookupScope scope id of
+        Nothing -> throwError ("undefined function: " ++ id)
+        Just val -> return val
+      args <- sequence $ map evalExpr (consumeCommaList clist)
+      pairs <- return $ zip (params (native func)) args
+      local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
+        (evalStmt (code (native func)))
+
+    -- -- func literal
+    JSFunctionExpression _ _ _ clist _ (JSBlock _ ss _) -> return $ newFunc params ss
+      where
+        params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
+
     -- unary expression
-    (JSUnaryExpression op e) -> do
+    JSUnaryExpression op e -> do
       e' <- evalExpr e
       case op of
         JSUnaryOpMinus _ -> case e' of
@@ -138,7 +167,7 @@ evalExpr expr = do
         err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
 
     -- binary expression
-    (JSExpressionBinary e1 op e2) -> do
+    JSExpressionBinary e1 op e2 -> do
       e1' <- evalExpr e1
       e2' <- evalExpr e2
       case op of

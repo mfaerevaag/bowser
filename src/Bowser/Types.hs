@@ -1,16 +1,19 @@
 module Bowser.Types
   ( Ident
-  , Value (..)
   , Scope
+  , Value (..)
+  , NativeObj (..)
   , emptyScope
   , lookupScope
   , insertScope
   , emptyObject
   , newObject
+  , newFunc
   ) where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Bowser.AST
 
 type Ident = String
 
@@ -22,10 +25,16 @@ data Value = JSUndefined
            | JSBoolean Bool
            | JSString String
            | JSObject { props :: Scope
-                              -- TODO
+                      , native :: NativeObj
                       }
            -- | JSSymbol -- NOTE: we'll save this for later
-           deriving (Eq, Show)
+           deriving (Show, Eq)
+
+data NativeObj = SimpleObj
+               | FuncObj { params :: [Ident]
+                         , code  :: [JSStatement]
+                         }
+               deriving (Show, Eq)
 
 -- scope
 
@@ -40,4 +49,7 @@ insertScope scope id val = Map.insert id val scope
 emptyObject = JSObject Map.empty
 
 newObject :: [(Ident, Value)] -> Value
-newObject props = JSObject { props = (Map.fromList props) }
+newObject props = JSObject { props = (Map.fromList props), native = SimpleObj }
+
+newFunc :: [Ident] -> [JSStatement] -> Value
+newFunc params stmts = JSObject { props = emptyScope, native = FuncObj { params = params, code = stmts } }
