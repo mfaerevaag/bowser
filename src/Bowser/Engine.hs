@@ -37,10 +37,10 @@ incState = do
   st <- get
   put (st + 1)
 
-logScope = do
-  st <- get
-  scope <- ask
-  tell [(show st) ++ ": " ++ (drop 9 (show scope))]
+-- logScope = do
+--   st <- get
+--   scope <- ask
+--   tell [(show st) ++ ": " ++ (drop 9 (show scope))]
 
 -- eval
 
@@ -52,7 +52,7 @@ evalAst x = throwError ("not implemented ast: " ++ (show x))
 
 evalStmt :: [JSStatement] -> Engine Value
 evalStmt ss = do
-  logScope
+  -- logScope
   scope <- ask
   case ss of
 
