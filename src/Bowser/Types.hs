@@ -9,6 +9,7 @@ module Bowser.Types
   , emptyObject
   , newObject
   , newFunc
+  , valueToBool
   ) where
 
 import Data.Map (Map)
@@ -53,3 +54,12 @@ newObject props = JSObject { props = (Map.fromList props), native = SimpleObj }
 
 newFunc :: [Ident] -> [JSStatement] -> Value
 newFunc params stmts = JSObject { props = emptyScope, native = FuncObj { params = params, code = stmts } }
+
+-- type helper
+
+valueToBool :: Value -> Bool
+valueToBool val = case val of
+  JSBoolean False -> False
+  JSUndefined -> False
+  JSNull -> False
+  _ -> True

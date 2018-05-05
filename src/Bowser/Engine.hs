@@ -95,6 +95,14 @@ evalStmt ss = do
       local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
         (evalStmt ((code (native func))++ss))
 
+    -- if
+    (JSIf _ _ e _ s):xs -> do
+      res <- evalExpr e
+      evalStmt $ if (valueToBool res) then s:xs else xs
+    (JSIfElse _ _ e _ s1 _ s2):xs -> do
+      res <- evalExpr e
+      evalStmt $ if (valueToBool res) then s1:xs else s2:xs
+
     x -> throwError ("not implemented stmt: " ++ (show x))
 
 -- expression
