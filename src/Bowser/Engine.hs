@@ -59,6 +59,9 @@ evalStmt ss = do
     -- nothing
     [] -> return $ JSUndefined
 
+    -- block
+    (JSStatementBlock _ ss _ _):xs -> evalStmt (ss++xs)
+
     -- return
     (JSReturn _ me _):ss -> case me of
       Nothing -> return JSUndefined
