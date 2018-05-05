@@ -32,10 +32,13 @@ runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
 emptyState :: State
 emptyState = 0
 
-incState :: (Num s, MonadState s m) => m()
+-- incState :: (Num s, MonadState s m) => m()
 incState = do
   st <- get
   put (st + 1)
+  if (st > 1000000)
+    then throwError "eval stopped: step threshold reached"
+    else put (st + 1)
 
 -- logScope = do
 --   st <- get
