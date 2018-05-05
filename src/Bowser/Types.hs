@@ -30,14 +30,14 @@ data Value = JSUndefined
                       , native :: NativeObj
                       }
            -- | JSSymbol -- NOTE: we'll save this for later
-           deriving (Show, Eq)
+           deriving (Eq)
 
 data NativeObj = SimpleObj
                | FuncObj { name :: Maybe String
                          , params :: [Ident]
                          , code  :: [JSStatement]
                          }
-               deriving (Show, Eq)
+               deriving (Eq)
 
 -- scope
 
@@ -68,3 +68,15 @@ valueToBool val = case val of
   JSUndefined -> False
   JSNull -> False
   _ -> True
+
+instance Show Value where
+  show JSUndefined = "undefined"
+  show JSNull = "null"
+  show (JSNumber n) = show n
+  show (JSBoolean b) = show b
+  show (JSString s) = s
+  show (JSObject props native) = case native of
+    SimpleObj -> "{ " ++ (foldr (\(key, val) acc ->
+                                    key ++ ": " ++ (show val) ++ ", "
+                                ) "" (Map.toList props)) ++ " }"
+    FuncObj name _ _ -> "[Function: " ++ (fromMaybe "anonymous" name) ++ "]"
