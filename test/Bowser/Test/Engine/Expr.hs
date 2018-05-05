@@ -44,4 +44,6 @@ logTests = testGroup "Logical"
   , testCase "gt" $ t (JSBoolean False) "2 > 2"
   , testCase "ge" $ t (JSBoolean True) "1 >= 1"
   , testCase "ge" $ t (JSBoolean False) "0 >= 1"
+  , testCase "ternary true" $ t (JSBoolean True) "true ? true : false"
+  , testCase "ternary false" $ t (JSBoolean False) "false ? true : false"
   ]

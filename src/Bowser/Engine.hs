@@ -153,6 +153,11 @@ evalExpr expr = do
         Just val -> return val
       return val
 
+    -- ternary
+    JSExpressionTernary ce _ e1 _ e2 -> do
+      res <- evalExpr ce
+      if (valueToBool res) then (evalExpr e1) else (evalExpr e2)
+
     -- call
     JSMemberExpression (JSIdentifier _ id) _ clist _ -> do
       func <- case lookupScope scope id of
