@@ -92,6 +92,12 @@ evalStmt ss = do
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
 
     -- call
+    (JSMethodCall (JSIdentifier _ "print") _ clist _ _):xs -> do
+      mapM_ (\e -> do
+                res <- evalExpr e
+                liftIO $ print (show res)
+            ) (consumeCommaList clist)
+      evalStmt xs
     (JSMethodCall (JSIdentifier _ id) _ clist _ _):xs -> do
       func <- case lookupScope scope id of
         Nothing -> throwError ("undefined function: " ++ id)
