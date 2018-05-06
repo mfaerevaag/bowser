@@ -7,6 +7,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State hiding (State)
 import Control.Monad.Writer
+import Control.Monad.Cont
 
 import Bowser.AST
 import Bowser.Types
@@ -18,11 +19,11 @@ import Bowser.Helper
 eval ast threshold = runEngine newGlobalObject (newState threshold) (evalAst ast)
 
 type State = (Integer, Maybe Integer)
-             -- Environment    Exception       Logging           State
-type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State IO))) a
+             -- Environment    Exception       Logging           State         Continuation
+type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State (ContT ((Either String a, [String]), State) IO)))) a
 
 runEngine :: Scope -> State -> Engine a -> IO ((Either String a, [String]), State)
-runEngine env st ev = runStateT (runWriterT (runExceptT (runReaderT ev env))) st
+runEngine env st ev = runContT (runStateT (runWriterT (runExceptT (runReaderT ev env))) st) return
 
 -- utility
 
