@@ -213,10 +213,10 @@ evalExpr expr = do
       e' <- evalExpr e
       case op of
         JSUnaryOpMinus _ -> case e' of
-          (JSNumber n) -> return $ JSNumber (- n)
+          (JSNumber n) -> return $ JSNumber $ - n
           _ -> throwError $ err op
         JSUnaryOpNot _ -> case e' of
-          (JSBoolean b) -> return $ JSBoolean (not b)
+          (JSBoolean b) -> return $ JSBoolean $ not b
           _ -> throwError $ err op
         _ -> throwError ("not implemented operator: " ++ (show op))
       where
@@ -229,54 +229,54 @@ evalExpr expr = do
       case op of
         -- addition
         JSBinOpPlus _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 + i2)
-          (JSNumber s1, JSString s2) -> return $ JSString ((show s1) ++ s2)
-          (JSString s1, JSNumber s2) -> return $ JSString (s1 ++ (show s2))
-          (JSString s1, JSString s2) -> return $ JSString (s1 ++ s2)
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (+) i1 i2
+          (JSNumber s1, JSString s2) -> return $ JSString $ (++) (show s1) s2
+          (JSString s1, JSNumber s2) -> return $ JSString $ (++) s1 (show s2)
+          (JSString s1, JSString s2) -> return $ JSString $ (++) s1 s2
           _ -> throwError $ err op
         -- subtraction
         JSBinOpMinus _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 - i2)
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (-) i1 i2
           _ -> throwError $ err op
         -- multiplication
         JSBinOpTimes _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 * i2)
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (*) i1 i2
           _ -> throwError $ err op
         -- division
         JSBinOpDivide _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber (i1 / i2)
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (/) i1 i2
           _ -> throwError $ err op
         -- and
         JSBinOpAnd _ -> case (e1', e2') of
-          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 && b2)
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (&&) b1 b2
           _ -> throwError $ err op
         -- or
         JSBinOpOr _ -> case (e1', e2') of
-          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean (b1 || b2)
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (||) b1 b2
           _ -> throwError $ err op
         -- equal
         JSBinOpEq _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 == n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (==) n1 n2
           _ -> throwError $ err op
         -- not equal
         JSBinOpNeq _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 /= n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (/=) n1 n2
           _ -> throwError $ err op
         -- less than
         JSBinOpLt _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 < n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<) n1 n2
           _ -> throwError $ err op
         -- less or equal
         JSBinOpLe _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 <= n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<=) n1 n2
           _ -> throwError $ err op
         -- greater than
         JSBinOpGt _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 > n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>) n1 n2
           _ -> throwError $ err op
         -- greater or equal
         JSBinOpGe _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean (n1 >= n2)
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>=) n1 n2
           _ -> throwError $ err op
         _ -> throwError ("not implemented operator: " ++ (show op))
       where
