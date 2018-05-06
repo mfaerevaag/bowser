@@ -7,9 +7,6 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State hiding (State)
 import Control.Monad.Writer
--- debug
-import Text.Show.Pretty (ppShow)
-import Debug.Trace
 
 import Bowser.AST
 import Bowser.Types
