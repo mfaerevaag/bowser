@@ -2,6 +2,7 @@
 <br>
 
 # bowser
+[![Build Status](https://travis-ci.org/mfaerevaag/bowser.svg?branch=master)](https://travis-ci.org/mfaerevaag/bowser)
 
 Simple framework for testing security mechanisms in JavaScript interpreters.
 
