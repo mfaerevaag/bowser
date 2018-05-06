@@ -1,8 +1,9 @@
-var foo = {
-    a: 1 + 2,
-    b: "asdf"
-};
-var bar = function(a, b) { return a + b; };
-
-print(foo);
-print(bar);
+var a, i = 0;
+while (!a) {
+    if (i == 42) {
+        a = i;
+    } else {
+        i += 1;
+    }
+}
+print(a);
