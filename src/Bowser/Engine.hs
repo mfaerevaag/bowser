@@ -10,12 +10,13 @@ import Control.Monad.Writer
 
 import Bowser.AST
 import Bowser.Types
+import Bowser.GlobalObject
 import Bowser.Helper
 
 
 -- engine
 
-eval ast threshold = runEngine emptyScope (newState threshold) (evalAst ast)
+eval ast threshold = runEngine newGlobalObject (newState threshold) (evalAst ast)
 
 type State = (Integer, Maybe Integer)
              -- Environment    Exception       Logging           State
@@ -149,7 +150,6 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    JSIdentifier _ "undefined" -> return JSUndefined
     JSIdentifier _ s -> case lookupScope scope s of
       Nothing -> throwError ("unbound variable: " ++ s)
       Just val -> return val
@@ -159,6 +159,7 @@ evalExpr expr = do
 
     -- other literal
     JSLiteral _ s -> case s of
+      "this" -> return scope
       "null" -> return JSNull
       "true" -> return $ JSBoolean True
       "false" -> return $ JSBoolean False
@@ -177,7 +178,7 @@ evalExpr expr = do
       obj <- case lookupScope scope id of
         Nothing -> throwError ("unbound variable: " ++ id)
         Just val -> return val
-      val <- case lookupScope (props obj) mem of
+      val <- case lookupScope obj mem of
         Nothing -> return JSUndefined
         Just val -> return val
       return val

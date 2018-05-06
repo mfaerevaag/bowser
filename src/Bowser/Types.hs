@@ -19,14 +19,14 @@ import Bowser.AST
 
 type Ident = String
 
-type Scope = Map.Map Ident Value
+type Scope = Value
 
 data Value = JSUndefined
            | JSNull
            | JSNumber Double
            | JSBoolean Bool
            | JSString String
-           | JSObject { props :: Scope
+           | JSObject { tab :: Map.Map Ident Value
                       , native :: NativeObj
                       }
            -- | JSSymbol -- NOTE: we'll save this for later
@@ -41,21 +41,22 @@ data NativeObj = SimpleObj
 
 -- scope
 
-emptyScope = Map.empty
+emptyScope = emptyObject
 
-lookupScope scope id = Map.lookup id scope
+lookupScope (JSObject { tab = tab }) id = Map.lookup id tab
 
-insertScope scope id val = Map.insert id val scope
+insertScope (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
+                                                       , native = SimpleObj }
 
 -- object
 
 emptyObject = JSObject Map.empty SimpleObj
 
 newObject :: [(Ident, Value)] -> Value
-newObject props = JSObject { props = (Map.fromList props), native = SimpleObj }
+newObject tab = JSObject { tab = (Map.fromList tab), native = SimpleObj }
 
 newFunc :: Maybe String -> [Ident]-> [JSStatement] -> Value
-newFunc name params stmts = JSObject { props = emptyScope
+newFunc name params stmts = JSObject { tab = Map.empty
                                      , native = FuncObj { name = name
                                                         , params = params
                                                         , code = stmts } }
@@ -76,9 +77,9 @@ instance Show Value where
   show JSNull = "null"
   show (JSNumber n) = show n
   show (JSBoolean b) = show b
-  show (JSString s) = s
-  show (JSObject props native) = case native of
+  show (JSString s) = "'" ++ s ++ "'"
+  show (JSObject tab native) = case native of
     SimpleObj -> "{ " ++ (drop 2 (foldr (\(key, val) acc ->
                                             ", " ++ key ++ ": " ++ (show val) ++ acc
-                                        ) "" (Map.toList props))) ++ " }"
+                                        ) "" (Map.toList tab))) ++ " }"
     FuncObj name _ _ -> "[Function: " ++ (fromMaybe "anonymous" name) ++ "]"
