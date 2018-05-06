@@ -45,7 +45,12 @@ emptyObject = JSObject Map.empty SimpleObj
 newObject :: [(Ident, Value)] -> Value
 newObject tab = JSObject { tab = (Map.fromList tab), native = SimpleObj }
 
-lookupObject (JSObject { tab = tab }) id = Map.lookup id tab
+lookupObject val id = case val of
+  JSObject { tab = tab } -> Map.lookup id tab
+  JSString s -> case id of
+    "length" -> Just . JSNumber . fromIntegral $ length s
+    _ -> Just JSUndefined
+  _ -> Just JSUndefined
 
 insertObject (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
                                                        , native = SimpleObj }

@@ -1,6 +1,7 @@
 module Bowser.Engine
   ( eval) where
 
+import Data.Maybe
 import Control.Monad.Identity
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -177,14 +178,15 @@ evalExpr expr = do
       return $ newObject pairs
 
     -- member
-    JSMemberDot (JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
-      obj <- case lookupObject scope id of
-        Nothing -> throwError ("unbound variable: " ++ id)
-        Just val -> return val
-      val <- case lookupObject obj mem of
-        Nothing -> return JSUndefined
-        Just val -> return val
-      return val
+    JSMemberDot e1 _ e2 -> do
+      obj <- evalExpr e1
+      local (const obj) (evalExpr e2)
+    JSMemberSquare e1 _ e2 _ -> do
+      obj <- evalExpr e1
+      i <- evalExpr e2
+      return $ case (obj, i) of
+        (JSObject { tab = tab }, JSString s) -> fromMaybe JSUndefined (lookupObject obj s)
+        (JSString s, JSNumber n) -> JSString $ [s!!(floor n)]
 
     -- ternary
     JSExpressionTernary ce _ e1 _ e2 -> do
