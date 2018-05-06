@@ -9,7 +9,7 @@ extra-source-files:
 - README.md
 
 # Metadata
-synopsis:            Secure web-browser
+synopsis:            Simple framework for testing security mechanisms in JavaScript interpreters
 category:            Web
 
 # Documentation
