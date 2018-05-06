@@ -213,11 +213,9 @@ evalExpr expr = do
       e' <- evalExpr e
       case op of
         JSUnaryOpMinus _ -> case e' of
-          (JSNumber n) -> return $ JSNumber $ - n
+          JSNumber n -> return $ JSNumber $ negate n
           _ -> throwError $ err op
-        JSUnaryOpNot _ -> case e' of
-          (JSBoolean b) -> return $ JSBoolean $ not b
-          _ -> throwError $ err op
+        JSUnaryOpNot _ -> return $ JSBoolean $ not (valueToBool e')
         _ -> throwError ("not implemented operator: " ++ (show op))
       where
         err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
