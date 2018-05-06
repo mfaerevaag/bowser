@@ -7,7 +7,7 @@ import Bowser.Parser
 import Bowser.Engine
 
 t e s = do
-  ((x, _), _) <- eval (parseString s)
+  ((x, _), _) <- eval (parseString s) Nothing
   case x of
     Left e -> fail e
     Right x -> x @?= e
