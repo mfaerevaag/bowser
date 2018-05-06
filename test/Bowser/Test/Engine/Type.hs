@@ -2,7 +2,6 @@ module Bowser.Test.Engine.Type (typeTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import Bowser.Test.Helper
 
 import Bowser.Types
 
@@ -13,5 +12,14 @@ typeTests = testGroup "Expr"
 
 boolTests = testGroup "Value to Bool"
   [
-    testCase "Number 0" $ t (JSBoolean False) "0"
+    testCase "Undefined" $ False @?= (valueToBool (JSUndefined))
+  , testCase "Null" $ False @?= (valueToBool (JSNull))
+  , testCase "Bool True" $ True @?= (valueToBool (JSBoolean True))
+  , testCase "Bool False" $ False @?= (valueToBool (JSBoolean False))
+  , testCase "Number 0" $ False @?= (valueToBool (JSNumber 0))
+  , testCase "Number -1" $ True @?= (valueToBool (JSNumber (-1)))
+  , testCase "Number 1" $ True @?= (valueToBool (JSNumber 1))
+  , testCase "String ''" $ False @?= (valueToBool (JSString ""))
+  , testCase "String 'foo'" $ True @?= (valueToBool (JSString "foo"))
+  , testCase "Object {}" $ True @?= (valueToBool emptyObject)
   ]
