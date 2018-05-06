@@ -170,7 +170,7 @@ evalExpr expr = do
       obj <- evalExpr e1
       i <- evalExpr e2
       case (obj, i) of
-        (JSObject { tab = tab }, JSString s) -> liftM (fromMaybe JSUndefined) (lookupScopeWith obj (extractTaint s))
+        (JSObject { tab = tab }, JSString s) -> liftM (fromMaybe JSUndefined) (lookupScopeWith obj (extractTaint s)) -- TODO: taint
         (JSString s, JSNumber n) -> return $ case s of
           Clean s -> JSString . Clean $ [s!!(floor (extractTaint n))]
           Dirty s -> JSString . Dirty $ [s!!(floor (extractTaint n))]

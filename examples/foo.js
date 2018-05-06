@@ -1,5 +1,3 @@
-document.cookie = "secret";
-
 print("cookie: " + document.cookie);
 print("cookie.length: " + document.cookie.length);
 
@@ -7,7 +5,7 @@ var c, i = 0, result = "";
 while (i < document.cookie.length) {
     c = document.cookie[i];
 
-    restult += c;
+    result += c;
 
     i += 1;
 }
