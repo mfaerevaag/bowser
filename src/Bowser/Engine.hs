@@ -1,6 +1,5 @@
 module Bowser.Engine
-  ( eval
-  ) where
+  ( eval) where
 
 import Control.Monad.Identity
 import Control.Monad.Except
@@ -12,7 +11,6 @@ import Bowser.AST
 import Bowser.Types
 import Bowser.GlobalObject
 import Bowser.Helper
-
 
 -- engine
 
