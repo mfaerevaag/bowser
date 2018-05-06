@@ -12,6 +12,7 @@ module Bowser.Types
   ) where
 
 import Data.Maybe
+import Data.Tainted
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Bowser.AST
@@ -22,9 +23,9 @@ type Scope = Value
 
 data Value = JSUndefined
            | JSNull
-           | JSNumber Double
-           | JSBoolean Bool
-           | JSString String
+           | JSNumber (Tainted Double)
+           | JSBoolean (Tainted Bool)
+           | JSString (Tainted String)
            | JSObject { tab :: Map.Map Ident Value
                       , native :: NativeObj
                       }
@@ -64,9 +65,12 @@ newFunc name params block = JSObject { tab = Map.empty
 
 valueToBool :: Value -> Bool
 valueToBool val = case val of
-  JSNumber n -> n /= 0.0
-  JSString s -> (length s) > 0
-  JSBoolean False -> False
+  JSNumber (Clean n) -> n /= 0.0
+  JSNumber (Dirty n) -> n /= 0.0
+  JSString (Clean s) -> (length s) > 0
+  JSString (Dirty s) -> (length s) > 0
+  JSBoolean (Clean False) -> False
+  JSBoolean (Dirty False) -> False
   JSUndefined -> False
   JSNull -> False
   _ -> True
@@ -76,7 +80,7 @@ instance Show Value where
   show JSNull = "null"
   show (JSNumber n) = show n
   show (JSBoolean b) = show b
-  show (JSString s) = s
+  show (JSString s) = show s
   show (JSObject tab native) = case native of
     SimpleObj -> "{ " ++ (drop 2 (foldr (\(key, val) acc ->
                                             ", " ++ key ++ ": " ++ (show val) ++ acc

@@ -2,6 +2,8 @@ module Bowser.Engine.Interp
   (eval) where
 
 import Data.Maybe
+import Data.Tainted
+import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -136,20 +138,20 @@ evalExpr expr = do
     JSExpressionParen _ e _ -> evalExpr e
 
     -- number
-    JSDecimal _ s -> return $ JSNumber (read s)
+    JSDecimal _ s -> return $ JSNumber (Clean (read s))
 
     -- ident
     JSIdentifier _ id -> lookupScope id >>= maybe ((throwError . ERef) ("unbound variable " ++ id)) return
 
     -- string literal
-    JSStringLiteral _ s -> return $ JSString (strip s)
+    JSStringLiteral _ s -> return $ JSString (Clean (strip s))
 
     -- other literal
     JSLiteral _ s -> case s of
       "this" -> getThis
       "null" -> return JSNull
-      "true" -> return $ JSBoolean True
-      "false" -> return $ JSBoolean False
+      "true" -> return $ JSBoolean (Clean True)
+      "false" -> return $ JSBoolean (Clean False)
       _ -> throwError . ETodo $ "literal " ++ s
 
     -- object literal
@@ -190,15 +192,23 @@ evalExpr expr = do
 
     -- unary expression
     JSUnaryExpression op e -> do
-      e' <- evalExpr e
+      val <- evalExpr e
       case op of
-        JSUnaryOpMinus _ -> case e' of
-          JSNumber n -> return $ JSNumber $ negate n
+        JSUnaryOpMinus _ -> case val of
+          JSNumber n -> return $ JSNumber $ liftM (negate) n
           _ -> throwError . EType $ err op
-        JSUnaryOpNot _ -> return $ JSBoolean $ not (valueToBool e')
+        JSUnaryOpNot _ -> case val of
+          JSNumber n -> return $ JSBoolean $ liftM (not) (f val n)
+          JSBoolean b -> return $ JSBoolean $ liftM (not) (f val b)
+          JSString s -> return $ JSBoolean $ liftM (not) (f val s)
+          x -> return $ JSBoolean $ Clean (not (valueToBool x))
+          where
+            f x v = case v of
+              Clean _ -> Clean $ valueToBool x
+              Dirty _ -> Dirty $ valueToBool x
         _ -> throwError . ETodo $ "operator " ++ show op
       where
-        err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
+        err op' = "type error: unary operator '" ++ show op' ++ "' got unexpected arg"
 
     -- binary expression
     JSExpressionBinary e1 op e2 -> do
@@ -207,56 +217,56 @@ evalExpr expr = do
       case op of
         -- addition
         JSBinOpPlus _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (+) i1 i2
-          (JSNumber s1, JSString s2) -> return $ JSString $ (++) (show s1) s2
-          (JSString s1, JSNumber s2) -> return $ JSString $ (++) s1 (show s2)
-          (JSString s1, JSString s2) -> return $ JSString $ (++) s1 s2
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ liftM2 (+) i1 i2
+          (JSNumber s1, JSString s2) -> return $ JSString $ liftM2 (++) (liftM (show) s1) s2
+          (JSString s1, JSNumber s2) -> return $ JSString $ liftM2 (++) s1 (liftM (show) s2)
+          (JSString s1, JSString s2) -> return $ JSString $ liftM2 (++) s1 s2
           _ -> throwError . EType $ err op
         -- subtraction
         JSBinOpMinus _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (-) i1 i2
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ liftM2 (-) i1 i2
           _ -> throwError . EType $ err op
         -- multiplication
         JSBinOpTimes _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (*) i1 i2
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ liftM2 (*) i1 i2
           _ -> throwError . EType $ err op
         -- division
         JSBinOpDivide _ -> case (e1', e2') of
-          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (/) i1 i2
+          (JSNumber i1, JSNumber i2) -> return $ JSNumber $ liftM2 (/) i1 i2
           _ -> throwError . EType $ err op
         -- and
         JSBinOpAnd _ -> case (e1', e2') of
-          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (&&) b1 b2
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ liftM2 (&&) b1 b2
           _ -> throwError . EType $ err op
         -- or
         JSBinOpOr _ -> case (e1', e2') of
-          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (||) b1 b2
+          (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ liftM2 (||) b1 b2
           _ -> throwError . EType $ err op
         -- equal
         JSBinOpEq _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (==) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (==) n1 n2
           _ -> throwError . EType $ err op
         -- not equal
         JSBinOpNeq _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (/=) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (/=) n1 n2
           _ -> throwError . EType $ err op
         -- less than
         JSBinOpLt _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (<) n1 n2
           _ -> throwError . EType $ err op
         -- less or equal
         JSBinOpLe _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<=) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (<=) n1 n2
           _ -> throwError . EType $ err op
         -- greater than
         JSBinOpGt _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (>) n1 n2
           _ -> throwError . EType $ err op
         -- greater or equal
         JSBinOpGe _ -> case (e1', e2') of
-          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>=) n1 n2
+          (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ liftM2 (>=) n1 n2
           _ -> throwError . EType $ err op
-        _ -> throwError . ETodo $ "operator " ++ show op
+        _ -> throwError . ETodo $ "not implemented operator: " ++ show op
       where
         err op' = "binary operator '" ++ show op' ++ "' got unexpected args"
 
