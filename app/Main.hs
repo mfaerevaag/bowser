@@ -15,21 +15,21 @@ data Options = Filename
              deriving (Ord, Eq, Show)
 
 argd :: [ Arg Options ]
-argd = [ Arg { argIndex = Filename,
-               argName = Just "file",
-               argAbbr = Just 'f',
-               argData = argDataRequired "filename" ArgtypeString,
-               argDesc = "file to run" }
-       , Arg { argIndex = Threshold,
-               argName = Just "threshold",
-               argAbbr = Just 't',
-               argData = argDataDefaulted "default" ArgtypeInt 1000000,
-               argDesc = "step threshold for execution" }
-       , Arg { argIndex = VerboseFlag,
-               argName = Just "verbose",
-               argAbbr = Just 'v',
-               argData = Nothing,
-               argDesc = "verbose flag" }
+argd = [ Arg { argIndex = Filename
+             , argName = Just "file"
+             , argAbbr = Just 'f'
+             , argData = argDataRequired "filename" ArgtypeString
+             , argDesc = "file to run" }
+       , Arg { argIndex = Threshold
+             , argName = Just "threshold"
+             , argAbbr = Just 't'
+             , argData = Nothing
+             , argDesc = "step threshold for execution" }
+       , Arg { argIndex = VerboseFlag
+             , argName = Just "verbose"
+             , argAbbr = Just 'v'
+             , argData = Nothing
+             , argDesc = "verbose flag" }
        ]
 
 main :: IO ()
