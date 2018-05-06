@@ -45,7 +45,7 @@ main = do
     pPrint ast
     putStrLn ""
 
-  res <- eval ast (toInteger ((fromJust (getArg args Threshold)::Int)))
+  res <- eval ast (getArg args Threshold)
 
   when (gotArg args VerboseFlag) $ do
     putStrLn ""
