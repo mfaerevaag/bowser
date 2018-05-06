@@ -64,6 +64,8 @@ newFunc name params stmts = JSObject { props = emptyScope
 
 valueToBool :: Value -> Bool
 valueToBool val = case val of
+  JSNumber n -> n /= 0.0
+  JSString s -> (length s) > 0
   JSBoolean False -> False
   JSUndefined -> False
   JSNull -> False
