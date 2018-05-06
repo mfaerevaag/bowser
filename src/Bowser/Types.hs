@@ -3,11 +3,10 @@ module Bowser.Types
   , Scope
   , Value (..)
   , NativeObj (..)
-  , emptyScope
-  , lookupScope
-  , insertScope
   , emptyObject
   , newObject
+  , lookupObject
+  , insertObject
   , newFunc
   , valueToBool
   ) where
@@ -39,15 +38,6 @@ data NativeObj = SimpleObj
                          }
                deriving (Eq)
 
--- scope
-
-emptyScope = emptyObject
-
-lookupScope (JSObject { tab = tab }) id = Map.lookup id tab
-
-insertScope (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
-                                                       , native = SimpleObj }
-
 -- object
 
 emptyObject = JSObject Map.empty SimpleObj
@@ -55,13 +45,18 @@ emptyObject = JSObject Map.empty SimpleObj
 newObject :: [(Ident, Value)] -> Value
 newObject tab = JSObject { tab = (Map.fromList tab), native = SimpleObj }
 
+lookupObject (JSObject { tab = tab }) id = Map.lookup id tab
+
+insertObject (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
+                                                       , native = SimpleObj }
+
 newFunc :: Maybe String -> [Ident]-> [JSStatement] -> Value
 newFunc name params stmts = JSObject { tab = Map.empty
                                      , native = FuncObj { name = name
                                                         , params = params
                                                         , code = stmts } }
 
--- type helper
+-- other
 
 valueToBool :: Value -> Bool
 valueToBool val = case val of

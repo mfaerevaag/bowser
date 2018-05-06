@@ -76,7 +76,7 @@ evalStmt ss = do
         val <- case init of
           JSVarInit _ expr -> evalExpr expr
           JSVarInitNone -> return JSUndefined
-        local (const (insertScope scope id val)) (evalStmt ss)
+        local (const (insertObject scope id val)) (evalStmt ss)
       JSLCons clist' _ x -> evalStmt ((wrap clist'):(wrap (JSLOne x)):ss)
         where
           wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
@@ -89,7 +89,7 @@ evalStmt ss = do
         JSMinusAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpMinus JSNoAnnot) rhs)
         JSTimesAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpTimes JSNoAnnot) rhs)
         JSDivideAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpDivide JSNoAnnot) rhs)
-      local (const (insertScope scope id val)) (evalStmt xs)
+      local (const (insertObject scope id val)) (evalStmt xs)
 
     -- expression
     (JSExpressionStatement expr _):xs -> do
@@ -100,7 +100,7 @@ evalStmt ss = do
 
     -- func
     (JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ ss _) _):xs -> do
-      local (const (insertScope scope id (newFunc (Just id) params ss))) (evalStmt xs)
+      local (const (insertObject scope id (newFunc (Just id) params ss))) (evalStmt xs)
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
 
@@ -112,12 +112,12 @@ evalStmt ss = do
             ) (consumeCommaList clist)
       evalStmt xs
     (JSMethodCall (JSIdentifier _ id) _ clist _ _):xs -> do
-      func <- case lookupScope scope id of
+      func <- case lookupObject scope id of
         Nothing -> throwError ("undefined function: " ++ id)
         Just val -> return val
       args <- sequence $ map evalExpr (consumeCommaList clist)
       pairs <- return $ zip (params (native func)) args
-      local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
+      local (const (foldr (\(id, val) acc -> (insertObject acc id val)) scope pairs))
         (evalStmt ((code (native func))++ss))
 
     -- if
@@ -150,7 +150,7 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    JSIdentifier _ s -> case lookupScope scope s of
+    JSIdentifier _ s -> case lookupObject scope s of
       Nothing -> throwError ("unbound variable: " ++ s)
       Just val -> return val
 
@@ -175,10 +175,10 @@ evalExpr expr = do
 
     -- member
     JSMemberDot (JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
-      obj <- case lookupScope scope id of
+      obj <- case lookupObject scope id of
         Nothing -> throwError ("unbound variable: " ++ id)
         Just val -> return val
-      val <- case lookupScope obj mem of
+      val <- case lookupObject obj mem of
         Nothing -> return JSUndefined
         Just val -> return val
       return val
@@ -190,12 +190,12 @@ evalExpr expr = do
 
     -- call
     JSMemberExpression (JSIdentifier _ id) _ clist _ -> do
-      func <- case lookupScope scope id of
+      func <- case lookupObject scope id of
         Nothing -> throwError ("undefined function: " ++ id)
         Just val -> return val
       args <- sequence $ map evalExpr (consumeCommaList clist)
       pairs <- return $ zip (params (native func)) args
-      local (const (foldr (\(id, val) acc -> (insertScope acc id val)) scope pairs))
+      local (const (foldr (\(id, val) acc -> (insertObject acc id val)) scope pairs))
         (evalStmt (code (native func)))
 
     -- func literal
