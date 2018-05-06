@@ -28,15 +28,14 @@ data Value = JSUndefined
            | JSObject { tab :: Map.Map Ident Value
                       , native :: NativeObj
                       }
-           -- | JSSymbol -- NOTE: we'll save this for later
-           deriving (Eq)
+           deriving Eq
 
 data NativeObj = SimpleObj
                | FuncObj { name :: Maybe String
                          , params :: [Ident]
                          , code  :: [JSStatement]
                          }
-               deriving (Eq)
+               deriving Eq
 
 -- object
 
