@@ -49,7 +49,7 @@ insertScope scope id val = Map.insert id val scope
 
 -- object
 
-emptyObject = JSObject Map.empty
+emptyObject = JSObject Map.empty SimpleObj
 
 newObject :: [(Ident, Value)] -> Value
 newObject props = JSObject { props = (Map.fromList props), native = SimpleObj }
