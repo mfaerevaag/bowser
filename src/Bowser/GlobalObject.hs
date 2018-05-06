@@ -4,5 +4,6 @@ import Data.Tainted
 import Bowser.Types
 
 newGlobalObject = newObject [ ("undefined", JSUndefined)
-                            , ("document", newObject [ ("cookie", JSString (Dirty "secret")) ])
+                            , ("document", newObject [ ("cookie", JSString (Dirty "secret"))
+                                                     , ("tainted", JSNumber (Dirty 42)) ])
                             ]

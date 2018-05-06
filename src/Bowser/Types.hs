@@ -9,6 +9,7 @@ module Bowser.Types
   , insertObject
   , newFunc
   , valueToBool
+  , extractTaint
   ) where
 
 import Data.Maybe
@@ -48,7 +49,7 @@ newObject tab = JSObject { tab = (Map.fromList tab), native = SimpleObj }
 lookupObject val id = case val of
   JSObject { tab = tab } -> Map.lookup id tab
   JSString s -> case id of
-    "length" -> Just . JSNumber . fromIntegral $ length s
+    "length" -> Just . JSNumber . Clean . fromIntegral . length . extractTaint $ s
     _ -> Just JSUndefined
   _ -> Just JSUndefined
 
@@ -86,3 +87,7 @@ instance Show Value where
                                             ", " ++ key ++ ": " ++ (show val) ++ acc
                                         ) "" (Map.toList tab))) ++ " }"
     FuncObj name _ _ -> "[Function: " ++ (fromMaybe "anonymous" name) ++ "]"
+
+extractTaint :: Tainted a -> a
+extractTaint (Clean a) = a
+extractTaint (Dirty a) = a

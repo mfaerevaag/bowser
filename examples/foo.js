@@ -1,8 +1,15 @@
-var i = 0;
+document.cookie = "secret";
 
-while (i < 10) {
-    print("i: " + i);
+print("cookie: " + document.cookie);
+print("cookie.length: " + document.cookie.length);
+
+var c, i = 0, result = "";
+while (i < document.cookie.length) {
+    c = document.cookie[i];
+
+    restult += c;
+
     i += 1;
 }
 
-print("finished");
+print("found: " + result);

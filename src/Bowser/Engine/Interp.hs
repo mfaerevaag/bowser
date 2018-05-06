@@ -170,8 +170,10 @@ evalExpr expr = do
       obj <- evalExpr e1
       i <- evalExpr e2
       case (obj, i) of
-        (JSObject { tab = tab }, JSString s) -> liftM (fromMaybe JSUndefined) (lookupScopeWith obj s)
-        (JSString s, JSNumber n) -> return $ JSString [s!!(floor n)]
+        (JSObject { tab = tab }, JSString s) -> liftM (fromMaybe JSUndefined) (lookupScopeWith obj (extractTaint s))
+        (JSString s, JSNumber n) -> return $ case s of
+          Clean s -> JSString . Clean $ [s!!(floor (extractTaint n))]
+          Dirty s -> JSString . Dirty $ [s!!(floor (extractTaint n))]
 
     -- ternary
     JSExpressionTernary cond _ e1 _ e2 -> ifM (liftM valueToBool (evalExpr cond))
