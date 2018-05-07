@@ -24,16 +24,19 @@ runEngine env st ev = runContT (runStateT (runWriterT (runExceptT (runReaderT ev
 
 -- state
 
-type State = (Integer, Maybe Integer)
+data State = State { step :: Integer
+                   , threshold :: Maybe Integer }
+           deriving Show
 
 newState :: Maybe Integer -> State
-newState threshold = (0, threshold)
+newState threshold = State 0 threshold
 
 incState :: Engine ()
 incState = do
-  (st, threshold) <- get
-  case threshold of
-    Just t -> if (st > t)
-      then throwError "eval stopped: step threshold reached"
-      else put ((st + 1), threshold)
-    Nothing -> put ((st + 1), threshold)
+  State { step = st, threshold = th } <- get
+  -- check step counter
+  case th of
+    Just t -> when (st > t) $
+      throwError "eval stopped: step threshold reached"
+    _ -> return ()
+  put $ State { step = (st + 1), threshold = th }
