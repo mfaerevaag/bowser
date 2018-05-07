@@ -6,8 +6,7 @@ import Text.Show.Pretty
 import System.Console.ParseArgs
 
 import Bowser.Parser
-import Bowser.Engine
-import Bowser.AST
+import Bowser.Engine.Interp
 
 data Options = Filename
              | Threshold

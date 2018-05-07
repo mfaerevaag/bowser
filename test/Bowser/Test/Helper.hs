@@ -4,7 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Bowser.Parser
-import Bowser.Engine
+import Bowser.Engine.Interp
 
 t e s = do
   ((x, _), _) <- eval (parseString s) Nothing

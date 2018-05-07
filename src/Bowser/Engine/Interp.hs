@@ -1,44 +1,21 @@
-module Bowser.Engine
-  ( eval) where
+module Bowser.Engine.Interp
+  (eval) where
 
 import Data.Maybe
-import Control.Monad.Identity
 import Control.Monad.Except
 import Control.Monad.Reader
-import Control.Monad.State hiding (State)
-import Control.Monad.Writer
-import Control.Monad.Cont
 
 import Bowser.AST
 import Bowser.Types
 import Bowser.GlobalObject
 import Bowser.Helper
+import Bowser.Engine.Monad
 
 -- engine
 
 eval ast threshold = runEngine newGlobalObject (newState threshold) (evalAst ast)
 
-type State = (Integer, Maybe Integer)
-             -- Environment    Exception       Logging           State         Continuation
-type Engine a = ReaderT Scope (ExceptT String (WriterT [String] (StateT State (ContT ((Either String a, [String]), State) IO)))) a
-
-runEngine :: Scope -> State -> Engine a -> IO ((Either String a, [String]), State)
-runEngine env st ev = runContT (runStateT (runWriterT (runExceptT (runReaderT ev env))) st) return
-
 -- utility
-
-newState :: Maybe Integer -> State
-newState threshold = (0, threshold)
-
--- incState :: (Num s, MonadState s m) => m()
-incState = do
-  (st, threshold) <- get
-  -- put (st + 1)
-  case threshold of
-    Just t -> if (st > t)
-      then throwError "eval stopped: step threshold reached"
-      else put ((st + 1), threshold)
-    Nothing -> put ((st + 1), threshold)
 
 -- logScope = do
 --   st <- get
