@@ -23,7 +23,7 @@ argd = [ Arg { argIndex = Filename
        , Arg { argIndex = Threshold
              , argName = Just "threshold"
              , argAbbr = Just 't'
-             , argData = Nothing
+             , argData = argDataOptional "threshold" ArgtypeInt
              , argDesc = "step threshold for execution" }
        , Arg { argIndex = VerboseFlag
              , argName = Just "verbose"
@@ -45,7 +45,7 @@ main = do
     pPrint ast
     putStrLn ""
 
-  res <- eval ast (getArg args Threshold)
+  res <- eval ast (liftM toInteger ((getArg args Threshold)::Maybe Int))
 
   when (gotArg args VerboseFlag) $ do
     putStrLn ""
