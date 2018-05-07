@@ -110,10 +110,19 @@ evalStmt ss = do
       res <- evalExpr e
       evalStmt $ if (valueToBool res) then s1:xs else s2:xs
 
+    -- continuations
+    (JSBreak _ _ _):xs -> returnCont CBreak JSUndefined
+    (JSContinue _ _ _):xs -> returnCont CContinue JSUndefined
+
     -- while
-    x@(JSWhile _ _ e _ s):xs -> do
-      res <- evalExpr e
-      evalStmt $ if (valueToBool res) then s:x:xs else xs
+    (JSWhile _ _ cond _ block):xs -> withCont CBreak scope (f JSUndefined)
+      where f lastValue = do
+              c <- evalExpr cond
+              if valueToBool c
+                then do
+                  value <- withCont CContinue scope (evalStmt [block])
+                  local (const scope) $ f value
+                else evalStmt xs
 
     x -> throwError ("not implemented stmt: " ++ (show x))
 
