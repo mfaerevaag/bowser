@@ -2,6 +2,7 @@ module Bowser.Engine.Interp
   (eval) where
 
 import Data.Maybe
+import Control.Monad.Extra
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
@@ -106,12 +107,12 @@ evalStmt stmt = do
     JSMethodCall (JSIdentifier _ id) _ clist _ _ -> call id (consumeCommaList clist)
 
     -- if
-    JSIf _ _ e _ s -> do
-      res <- evalExpr e
-      if (valueToBool res) then evalStmt s else return JSUndefined
-    JSIfElse _ _ e _ s1 _ s2 -> do
-      res <- evalExpr e
-      evalStmt $ if (valueToBool res) then s1 else s2
+    JSIf _ _ cond _ stmt -> ifM (liftM valueToBool (evalExpr cond))
+                            (evalStmt stmt)
+                            (return JSUndefined)
+    JSIfElse _ _ cond _ s1 _ s2 -> ifM (liftM valueToBool (evalExpr cond))
+                                   (evalStmt s1)
+                                   (evalStmt s2)
 
     -- continuations
     JSBreak _ _ _ -> returnCont CBreak JSUndefined
@@ -180,9 +181,9 @@ evalExpr expr = do
         (JSString s, JSNumber n) -> return $ JSString [s!!(floor n)]
 
     -- ternary
-    JSExpressionTernary ce _ e1 _ e2 -> do
-      res <- evalExpr ce
-      if valueToBool res then evalExpr e1 else evalExpr e2
+    JSExpressionTernary cond _ e1 _ e2 -> ifM (liftM valueToBool (evalExpr cond))
+                                          (evalExpr e1)
+                                          (evalExpr e2)
 
     -- call
     JSMemberExpression (JSIdentifier _ id) _ clist _ -> call id (consumeCommaList clist)
