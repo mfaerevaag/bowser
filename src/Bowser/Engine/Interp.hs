@@ -20,13 +20,8 @@ eval ast threshold = runEngine (newState threshold newGlobalObject) (evalAst ast
 
 call :: Ident -> [JSExpression] -> Engine Value
 call id args = do
-  func <- do
-    mf <- lookupScope id
-    case mf of
-      Nothing -> throwError ("undefined function: " ++ id)
-      Just val -> return val
-  args' <- sequence $ map evalExpr args
-  pairs <- return $ zip (params (native func)) args'
+  func <- lookupScope id >>= maybe (throwError ("undefined function: " ++ id)) return
+  pairs <- liftM (zip ((params . native) func)) (sequence (map evalExpr args))
   -- add arguments
   pushScope
   mapM_ (uncurry $ insertScope) pairs

@@ -69,7 +69,6 @@ lookupScope :: Ident -> Engine (Maybe Value)
 lookupScope id = do
   State { scopeStack = stack } <- get
   found <- return $ f stack
-  -- liftIO . print $ "found " ++ id ++ " -> " ++ show found
   return $ found
   where
     f [] = Nothing
