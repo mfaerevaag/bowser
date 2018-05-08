@@ -144,11 +144,7 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    JSIdentifier _ s -> do
-      val <- lookupScope s
-      case val of
-        Nothing -> throwError ("unbound variable: " ++ s)
-        Just val -> return val
+    JSIdentifier _ id -> lookupScope id >>= maybe (throwError ("unbound variable: " ++ id)) return
 
     -- string literal
     JSStringLiteral _ s -> return $ JSString (strip s)
