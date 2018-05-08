@@ -1,11 +1,11 @@
 function fib(num){
     var a = 1, b = 0, temp;
 
-    while (num >= 0){
+    while (num > 0){
         temp = a;
         a += b;
         b = temp;
-        num = num--;
+        num -= 1;
     }
 
     return b;

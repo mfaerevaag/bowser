@@ -33,7 +33,7 @@ data Value = JSUndefined
 data NativeObj = SimpleObj
                | FuncObj { name :: Maybe String
                          , params :: [Ident]
-                         , code  :: [JSStatement]
+                         , code  :: JSStatement
                          }
                deriving Eq
 
@@ -54,11 +54,11 @@ lookupObject val id = case val of
 insertObject (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
                                                        , native = SimpleObj }
 
-newFunc :: Maybe String -> [Ident]-> [JSStatement] -> Value
-newFunc name params stmts = JSObject { tab = Map.empty
+newFunc :: Maybe String -> [Ident]-> JSStatement -> Value
+newFunc name params block = JSObject { tab = Map.empty
                                      , native = FuncObj { name = name
                                                         , params = params
-                                                        , code = stmts } }
+                                                        , code = block } }
 
 -- other
 

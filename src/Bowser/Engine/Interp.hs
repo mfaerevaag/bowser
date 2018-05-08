@@ -4,6 +4,7 @@ module Bowser.Engine.Interp
 import Data.Maybe
 import Control.Monad.Except
 import Control.Monad.Reader
+import Control.Monad.State
 
 import Bowser.AST
 import Bowser.Types
@@ -13,53 +14,70 @@ import Bowser.Engine.Monad
 
 -- engine
 
-eval ast threshold = runEngine newGlobalObject (newState threshold) (evalAst ast)
+eval ast threshold = runEngine (newState threshold newGlobalObject) (evalAst ast)
 
 -- utility
 
--- logScope = do
---   st <- get
---   scope <- ask
---   tell [(show st) ++ ": " ++ (drop 9 (show scope))]
+call :: Ident -> [JSExpression] -> Engine Value
+call id args = do
+  func <- do
+    mf <- lookupScope id
+    case mf of
+      Nothing -> throwError ("undefined function: " ++ id)
+      Just val -> return val
+  args' <- sequence $ map evalExpr args
+  pairs <- return $ zip (params (native func)) args'
+  -- add arguments
+  pushScope
+  mapM_ (uncurry $ insertScope) pairs
+  -- run
+  withCont CReturn $ do
+    val <- evalStmt . code . native $ func
+    popScope
+    return val
 
 -- eval
 
 evalAst :: JSAst -> Engine Value
-evalAst (JSAstProgram stmts _) = evalStmt stmts
+evalAst (JSAstProgram stmts _) = liftM last $ mapM evalStmt stmts
 evalAst x = throwError ("not implemented ast: " ++ (show x))
 
 -- statement
 
-evalStmt :: [JSStatement] -> Engine Value
-evalStmt ss = do
-  -- logScope
-  scope <- ask
-  case ss of
-
-    -- nothing
-    [] -> return $ JSUndefined
+evalStmt :: JSStatement -> Engine Value
+evalStmt stmt = do
+  case stmt of
 
     -- block
-    (JSStatementBlock _ ss _ _):xs -> evalStmt (ss++xs)
+    JSStatementBlock _ block _ _ -> liftM last $ mapM evalStmt block
 
     -- return
-    (JSReturn _ me _):ss -> case me of
+    JSReturn _ me _ -> case me of
       Nothing -> return JSUndefined
-      Just e -> evalExpr e
+      Just e -> do -- evalExpr e >>= returnCont CReturn
+        val <- evalExpr e
+        -- liftIO . print $ show val
+        returnCont CReturn val
 
     -- variable
-    (JSVariable _ clist _):ss -> case clist of
-      JSLOne (JSVarInitExpression (JSIdentifier _ id) init) -> do
-        val <- case init of
-          JSVarInit _ expr -> evalExpr expr
-          JSVarInitNone -> return JSUndefined
-        local (const (insertObject scope id val)) (evalStmt ss)
-      JSLCons clist' _ x -> evalStmt ((wrap clist'):(wrap (JSLOne x)):ss)
-        where
-          wrap x = (JSVariable JSNoAnnot x (JSSemi JSNoAnnot))
+    JSVariable _ clist _ -> f clist
+      where
+        f JSLNil = return JSUndefined
+        f (JSLOne (JSVarInitExpression (JSIdentifier _ id) init)) = do
+          val <- case init of
+            JSVarInit _ expr -> evalExpr expr
+            JSVarInitNone -> return JSUndefined
+          insertScope id val
+          return JSUndefined
+        f (JSLCons clist' _ (JSVarInitExpression (JSIdentifier _ id) init)) = do -- TODO: refactor
+          val <- case init of
+            JSVarInit _ expr -> evalExpr expr
+            JSVarInitNone -> return JSUndefined
+          insertScope id val
+          f clist'
 
     -- assign
-    (JSAssignStatement lhs op rhs _):xs -> do
+    JSAssignStatement lhs op rhs _ -> do
       val <- case op of
         JSAssign _ -> evalExpr rhs
         JSPlusAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpPlus JSNoAnnot) rhs)
@@ -67,62 +85,58 @@ evalStmt ss = do
         JSTimesAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpTimes JSNoAnnot) rhs)
         JSDivideAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpDivide JSNoAnnot) rhs)
       case lhs of
-        JSIdentifier _ id -> local (const (insertObject scope id val)) (evalStmt xs)
+        JSIdentifier _ id -> do
+          updateScope id val
+          return JSUndefined
         JSMemberDot e@(JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
-          obj <- evalExpr e
-          scope' <- return $ insertObject obj mem val
-          local (const (insertObject scope id scope')) (evalStmt xs)
+          -- check exists
+          case (return (evalExpr e)) of
+            Nothing -> throwError ("undefined variable: " ++ id)
+            Just _ -> return ()
+          updateScopeWith id mem val
+          return JSUndefined
 
     -- expression
-    (JSExpressionStatement expr _):xs -> do
-      val <- evalExpr expr
-      case xs of
-        [] -> return val
-        xs -> evalStmt xs
+    JSExpressionStatement expr _ -> evalExpr expr
 
     -- func
-    (JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ ss _) _):xs -> do
-      local (const (insertObject scope id (newFunc (Just id) params ss))) (evalStmt xs)
+    JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ stmt _) _ -> do
+      insertScope id (newFunc (Just id) params code)
+      return JSUndefined
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
+        code = (JSStatementBlock JSNoAnnot stmt JSNoAnnot JSSemiAuto)
 
     -- call
-    (JSMethodCall (JSIdentifier _ "print") _ clist _ _):xs -> do
+    JSMethodCall (JSIdentifier _ "print") _ clist _ _ -> do
       mapM_ (\e -> do
                 res <- evalExpr e
                 liftIO $ print (show res)
             ) (consumeCommaList clist)
-      evalStmt xs
-    (JSMethodCall (JSIdentifier _ id) _ clist _ _):xs -> do
-      func <- case lookupObject scope id of
-        Nothing -> throwError ("undefined function: " ++ id)
-        Just val -> return val
-      args <- sequence $ map evalExpr (consumeCommaList clist)
-      pairs <- return $ zip (params (native func)) args
-      local (const (foldr (\(id, val) acc -> (insertObject acc id val)) scope pairs))
-        (evalStmt ((code (native func))++ss))
+      return JSUndefined
+    JSMethodCall (JSIdentifier _ id) _ clist _ _ -> call id (consumeCommaList clist)
 
     -- if
-    (JSIf _ _ e _ s):xs -> do
+    JSIf _ _ e _ s -> do
       res <- evalExpr e
-      evalStmt $ if (valueToBool res) then s:xs else xs
-    (JSIfElse _ _ e _ s1 _ s2):xs -> do
+      if (valueToBool res) then evalStmt s else return JSUndefined
+    JSIfElse _ _ e _ s1 _ s2 -> do
       res <- evalExpr e
-      evalStmt $ if (valueToBool res) then s1:xs else s2:xs
+      evalStmt $ if (valueToBool res) then s1 else s2
 
     -- continuations
-    (JSBreak _ _ _):xs -> returnCont CBreak JSUndefined
-    (JSContinue _ _ _):xs -> returnCont CContinue JSUndefined
+    JSBreak _ _ _ -> returnCont CBreak JSUndefined
+    JSContinue _ _ _ -> returnCont CContinue JSUndefined
 
     -- while
-    (JSWhile _ _ cond _ block):xs -> withCont CBreak scope (f JSUndefined)
+    JSWhile _ _ cond _ block -> withCont CBreak (f JSUndefined)
       where f lastValue = do
               c <- evalExpr cond
               if valueToBool c
                 then do
-                  value <- withCont CContinue scope (evalStmt [block])
-                  local (const scope) $ f value
-                else evalStmt xs
+                  value <- withCont CContinue (evalStmt block)
+                  f value
+                else return lastValue
 
     x -> throwError ("not implemented stmt: " ++ (show x))
 
@@ -131,7 +145,6 @@ evalStmt ss = do
 evalExpr :: JSExpression -> Engine Value
 evalExpr expr = do
   incState
-  scope <- ask
   case expr of
 
     -- parens
@@ -141,16 +154,18 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    JSIdentifier _ s -> case lookupObject scope s of
-      Nothing -> throwError ("unbound variable: " ++ s)
-      Just val -> return val
+    JSIdentifier _ s -> do
+      val <- lookupScope s
+      case val of
+        Nothing -> throwError ("unbound variable: " ++ s)
+        Just val -> return val
 
     -- string literal
     JSStringLiteral _ s -> return $ JSString (strip s)
 
     -- other literal
     JSLiteral _ s -> case s of
-      "this" -> return scope
+      "this" -> getThis
       "null" -> return JSNull
       "true" -> return $ JSBoolean True
       "false" -> return $ JSBoolean False
@@ -165,38 +180,32 @@ evalExpr expr = do
       return $ newObject pairs
 
     -- member
-    JSMemberDot e1 _ e2 -> do
+    JSMemberDot e1 _ (JSIdentifier _ id) -> do
       obj <- evalExpr e1
-      local (const obj) (evalExpr e2)
+      liftM (fromMaybe JSUndefined) $ lookupScopeWith obj id
     JSMemberSquare e1 _ e2 _ -> do
       obj <- evalExpr e1
       i <- evalExpr e2
-      return $ case (obj, i) of
-        (JSObject { tab = tab }, JSString s) -> fromMaybe JSUndefined (lookupObject obj s)
-        (JSString s, JSNumber n) -> JSString $ [s!!(floor n)]
+      case (obj, i) of
+        (JSObject { tab = tab }, JSString s) -> liftM (fromMaybe JSUndefined) (lookupScopeWith obj s)
+        (JSString s, JSNumber n) -> return $ JSString [s!!(floor n)]
 
     -- ternary
     JSExpressionTernary ce _ e1 _ e2 -> do
       res <- evalExpr ce
-      if (valueToBool res) then (evalExpr e1) else (evalExpr e2)
+      if valueToBool res then evalExpr e1 else evalExpr e2
 
     -- call
-    JSMemberExpression (JSIdentifier _ id) _ clist _ -> do
-      func <- case lookupObject scope id of
-        Nothing -> throwError ("undefined function: " ++ id)
-        Just val -> return val
-      args <- sequence $ map evalExpr (consumeCommaList clist)
-      pairs <- return $ zip (params (native func)) args
-      local (const (foldr (\(id, val) acc -> (insertObject acc id val)) scope pairs))
-        (evalStmt (code (native func)))
+    JSMemberExpression (JSIdentifier _ id) _ clist _ -> call id (consumeCommaList clist)
 
     -- func literal
-    JSFunctionExpression _ id _ clist _ (JSBlock _ ss _) -> return $ newFunc name params ss
+    JSFunctionExpression _ id _ clist _ (JSBlock _ stmt _) -> return $ newFunc name params code
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
         name = case id of
           JSIdentName _ s -> Just s
           JSIdentNone -> Nothing
+        code = (JSStatementBlock JSNoAnnot stmt JSNoAnnot JSSemiAuto)
 
     -- unary expression
     JSUnaryExpression op e -> do

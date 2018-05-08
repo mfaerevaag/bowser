@@ -16,6 +16,6 @@ ifTests = testGroup "If"
     testCase "if false" $ t (JSUndefined) "if (false) true"
   , testCase "if true" $ t (JSBoolean True) "if (true) true"
   , testCase "if true" $ t (JSUndefined) "if (undefined) true"
-  , testCase "if true then first branch" $ t (JSBoolean True) "if (true) {return true;} else {return false;}"
-  , testCase "if false then second branch" $ t (JSBoolean False) "if (false) {return true;} else {return false;}"
+  , testCase "if true then first branch" $ t (JSBoolean True) "if (true) true else false"
+  , testCase "if false then second branch" $ t (JSBoolean False) "if (false) true else false"
   ]
