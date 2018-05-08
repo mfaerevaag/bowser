@@ -49,6 +49,7 @@ insertScope id val = do
   scope' <- return $ insertObject scope id val
   put $ st { scopeStack = scope':rest }
 
+-- TODO: fix
 updateScopeWith :: Ident -> Ident -> Value -> Engine ()
 updateScopeWith id mem val =
   modify $ \state@State { scopeStack = stack } ->
@@ -58,9 +59,18 @@ updateScopeWith id mem val =
                                        ) stack)}
 
 updateScope :: Ident -> Value -> Engine ()
-updateScope id val =
-  modify $ \state@State { scopeStack = scope:rest } ->
-            state { scopeStack = (insertObject scope id val):rest }
+updateScope id val = do
+  state@State { scopeStack = stack } <- get
+  case f stack of
+    (Nothing, _) -> throwError $ "undefined variable " ++ id
+    (Just _, stack') -> put $ state { scopeStack = stack' }
+  where
+    f [] = (Nothing, [])
+    f (s:ss) = case lookupObject s id of
+      Just x -> (Just x, ((insertObject s id val):ss))
+      Nothing -> case (f ss) of
+        (Nothing, ss') -> (Nothing, s:ss')
+        (Just x, ss') -> (Just x, s:ss')
 
 lookupScopeWith :: Scope -> Ident -> Engine (Maybe Value)
 lookupScopeWith scope id = return $ lookupObject scope id
@@ -68,8 +78,7 @@ lookupScopeWith scope id = return $ lookupObject scope id
 lookupScope :: Ident -> Engine (Maybe Value)
 lookupScope id = do
   State { scopeStack = stack } <- get
-  found <- return $ f stack
-  return $ found
+  return $ f stack
   where
     f [] = Nothing
     f (s:ss) = case lookupObject s id of
@@ -142,6 +151,6 @@ returnCont :: ContType -> Value -> Engine Value
 returnCont ct value = do
   Cont { cType = ct', cCont = cc, cScope = cs } <- popCont ct
   if ct' == ct
-    then do modify $ \state -> state { scopeStack = cs }
+    then do -- modify $ \state -> state { scopeStack = cs }
             cc value
     else returnCont ct value
