@@ -60,9 +60,8 @@ evalStmt stmt = do
         f JSLNil = return ()
         f (JSLOne (JSVarInitExpression (JSIdentifier _ id) init)) =
           evalInit init >>= insertScope id
-        f (JSLCons clist' _ (JSVarInitExpression (JSIdentifier _ id) init)) = do
-          evalInit init >>= insertScope id
-          f clist'
+        f (JSLCons clist' _ (JSVarInitExpression (JSIdentifier _ id) init)) =
+          evalInit init >>= insertScope id >> f clist'
         evalInit (JSVarInit _ expr) = evalExpr expr
         evalInit (JSVarInitNone) = return JSUndefined
 
@@ -75,24 +74,20 @@ evalStmt stmt = do
         JSTimesAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpTimes JSNoAnnot) rhs)
         JSDivideAssign _ -> evalExpr (JSExpressionBinary lhs (JSBinOpDivide JSNoAnnot) rhs)
       case lhs of
-        JSIdentifier _ id -> do
-          updateScope id val
-          return JSUndefined
+        JSIdentifier _ id -> updateScope id val >> return JSUndefined
         JSMemberDot e@(JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
           -- check exists
           case (return (evalExpr e)) of
             Nothing -> throwError ("undefined variable: " ++ id)
             Just _ -> return ()
-          updateScopeWith id mem val
-          return JSUndefined
+          updateScopeWith id mem val >> return JSUndefined
 
     -- expression
     JSExpressionStatement expr _ -> evalExpr expr
 
     -- func
-    JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ stmt _) _ -> do
-      insertScope id (newFunc (Just id) params code)
-      return JSUndefined
+    JSFunction _ (JSIdentName _ id) _ clist _ (JSBlock _ stmt _) _ ->
+      insertScope id (newFunc (Just id) params code) >> return JSUndefined
       where
         params = map (\(JSIdentName _ id) -> id) (consumeCommaList clist)
         code = (JSStatementBlock JSNoAnnot stmt JSNoAnnot JSSemiAuto)
