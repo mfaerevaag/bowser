@@ -49,27 +49,21 @@ evalStmt stmt = do
     -- return
     JSReturn _ me _ -> case me of
       Nothing -> return JSUndefined
-      Just e -> do -- evalExpr e >>= returnCont CReturn
-        val <- evalExpr e
-        -- liftIO . print $ show val
-        returnCont CReturn val
+      Just e -> evalExpr e >>= returnCont CReturn
 
     -- variable
-    JSVariable _ clist _ -> f clist
+    JSVariable _ clist _ -> do
+      f clist
+      return JSUndefined
       where
-        f JSLNil = return JSUndefined
-        f (JSLOne (JSVarInitExpression (JSIdentifier _ id) init)) = do
-          val <- case init of
-            JSVarInit _ expr -> evalExpr expr
-            JSVarInitNone -> return JSUndefined
-          insertScope id val
-          return JSUndefined
-        f (JSLCons clist' _ (JSVarInitExpression (JSIdentifier _ id) init)) = do -- TODO: refactor
-          val <- case init of
-            JSVarInit _ expr -> evalExpr expr
-            JSVarInitNone -> return JSUndefined
-          insertScope id val
+        f JSLNil = return ()
+        f (JSLOne (JSVarInitExpression (JSIdentifier _ id) init)) =
+          evalInit init >>= insertScope id
+        f (JSLCons clist' _ (JSVarInitExpression (JSIdentifier _ id) init)) = do
+          evalInit init >>= insertScope id
           f clist'
+        evalInit (JSVarInit _ expr) = evalExpr expr
+        evalInit (JSVarInitNone) = return JSUndefined
 
     -- assign
     JSAssignStatement lhs op rhs _ -> do
