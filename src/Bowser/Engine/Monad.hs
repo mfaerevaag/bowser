@@ -9,17 +9,11 @@ import Control.Monad.Cont hiding (Cont)
 
 import Bowser.Types
 
-type Engine a
-  = ExceptT String ( -- Exception
-        WriterT [String] ( -- Logging
-            StateT State ( -- State
-                ContT ( -- Continuation
-                    (Either String Value, [String]),
-                    State)
-                  IO))) a
+             -- Exception    -- State      -- Continuation
+type Engine a = ExceptT String (StateT State (ContT ((Either String Value), State) IO)) a
 
-runEngine :: State -> Engine Value -> IO ((Either String Value, [String]), State)
-runEngine st ast = runContT (runStateT (runWriterT (runExceptT ast)) st) return
+runEngine :: State -> Engine Value -> IO ((Either String Value), State)
+runEngine st ast = runContT (runStateT (runExceptT ast) st) return
 
 -- state
 
