@@ -1,9 +1,4 @@
-module Bowser.Helper
-  ( strip
-  , trim
-  , consumeCommaList
-  , consumeCommaTrailingList
-  ) where
+module Bowser.Engine.Helper where
 
 import Data.Char (isSpace)
 

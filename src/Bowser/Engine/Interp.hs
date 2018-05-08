@@ -9,7 +9,7 @@ import Control.Monad.State
 import Bowser.AST
 import Bowser.Types
 import Bowser.GlobalObject
-import Bowser.Helper
+import Bowser.Engine.Helper
 import Bowser.Engine.Monad
 
 -- engine
