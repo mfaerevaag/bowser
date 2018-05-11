@@ -76,7 +76,7 @@ instance Show Value where
   show JSNull = "null"
   show (JSNumber n) = show n
   show (JSBoolean b) = show b
-  show (JSString s) = "'" ++ s ++ "'"
+  show (JSString s) = s
   show (JSObject tab native) = case native of
     SimpleObj -> "{ " ++ (drop 2 (foldr (\(key, val) acc ->
                                             ", " ++ key ++ ": " ++ (show val) ++ acc

@@ -95,7 +95,7 @@ evalStmt stmt = do
     JSMethodCall (JSIdentifier _ "print") _ clist _ _ -> do
       mapM_ (\e -> do
                 res <- evalExpr e
-                liftIO $ print (show res)
+                liftIO . print $ res
             ) (consumeCommaList clist)
       return JSUndefined
     JSMethodCall (JSIdentifier _ id) _ clist _ _ -> call id (consumeCommaList clist)

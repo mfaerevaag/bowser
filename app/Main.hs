@@ -38,22 +38,27 @@ main = do
   args <- parseArgsIO
           (ArgsParseControl ArgsComplete ArgsHardDash)
           argd
+  verbose <- return $ gotArg args VerboseFlag
 
   ast <- parseFile (fromJust (getArg args Filename))
 
-  when (gotArg args VerboseFlag) $ do
+  when verbose $ do
     putStrLn "ast:"
     pPrint ast
     putStrLn ""
 
-  res@(val, state) <- eval ast (liftM toInteger ((getArg args Threshold)::Maybe Int))
+  when verbose $ putStrLn "running:"
+  (res, state) <- eval ast (liftM toInteger ((getArg args Threshold)::Maybe Int))
 
-  when (gotArg args VerboseFlag) $ do
+  when verbose $ do
     putStrLn ""
     putStrLn "return:"
     pPrint res
+    putStrLn ""
+    putStrLn "state:"
+    pPrint state
 
-  case val of
+  case res of
     Left err -> die err
     Right x -> case x of
       JSNumber n | n == 0 -> exitSuccess
