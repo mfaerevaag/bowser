@@ -51,8 +51,7 @@ lookupObject val id = case val of
     _ -> Just JSUndefined
   _ -> Just JSUndefined
 
-insertObject (JSObject { tab = tab }) id val = JSObject { tab = (Map.insert id val tab)
-                                                       , native = SimpleObj }
+insertObject obj@(JSObject { tab = t }) id val = obj { tab = (Map.insert id val t) }
 
 newFunc :: Maybe String -> [Ident]-> JSStatement -> Value
 newFunc name params block = JSObject { tab = Map.empty
