@@ -61,6 +61,6 @@ main = do
   case res of
     Left err -> die . show $ err
     Right x -> case x of
-      JSNumber n | n == 0 -> exitSuccess
-      JSNumber n -> exitWith . ExitFailure . floor $ n
+      JSNumber n | (extractTaint n) == 0 -> exitSuccess
+      JSNumber n -> exitWith . ExitFailure . floor . extractTaint $ n
       _ -> exitSuccess
