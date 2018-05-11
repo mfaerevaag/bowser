@@ -44,14 +44,19 @@ insertScope id val = do
   scope' <- return $ insertObject scope id val
   put $ st { scopeStack = scope':rest }
 
--- TODO: fix
 updateScopeWith :: Ident -> Ident -> Value -> Engine ()
-updateScopeWith id mem val =
-  modify $ \state@State { scopeStack = stack } ->
-             state { scopeStack = (map (\s -> case lookupObject s id of
-                                                Just obj -> insertObject s id (insertObject obj mem val)
-                                                Nothing -> s
-                                       ) stack)}
+updateScopeWith id mem val = do
+  state@State { scopeStack = stack } <- get
+  (found, scope') <- return $ foldr (\s (found, list) -> case (found, lookupObject s id) of
+                                                           (False, Just obj) -> (True, new:list)
+                                                             where
+                                                               new' = insertObject obj mem val
+                                                               new = insertObject s id new'
+                                                           _ -> (found, s:list)
+                                    ) (False, []) stack
+  case found of
+    False -> throwError . ERef $ "undefined variable " ++ id
+    True -> put $ state { scopeStack = scope' }
 
 updateScope :: Ident -> Value -> Engine ()
 updateScope id val = do
