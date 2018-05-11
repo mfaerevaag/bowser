@@ -20,7 +20,7 @@ runEngine st ast = runContT (runStateT (runExceptT ast) st) return
 data State = State { step :: Integer
                    , threshold :: Maybe Integer
                    , scopeStack :: [Scope]
-                   , contStack :: [Cont]}
+                   , contStack :: [Cont] }
            deriving Show
 
 newState :: Maybe Integer -> Scope -> State
