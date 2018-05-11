@@ -29,7 +29,6 @@ call id args = do
   -- run
   withCont CReturn $ do
     val <- evalStmt . code . native $ func
-    popScope
     return val
 
 -- eval

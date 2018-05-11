@@ -26,4 +26,9 @@ breakTests = testGroup "Control flow"
     testCase "while break" $ t (JSNumber 1) "var i = 0; while (i < 3) { i += 1; break; } i"
   , testCase "while continue" $ t (JSNumber 3) "var i = 0; while (i < 3) { i += 1; continue; break; } i"
   , testCase "function return" $ t (JSNumber 1) "var i = 0; function a() { i += 1; return; } a(); i"
+  , testCase "function recursive return" $ t (JSNumber 34) "var fib = function(num) { \
+                                                           \ if (num <= 1) return num; \
+                                                           \ return fib(num - 1) + fib(num - 2); \
+                                                           \ } \
+                                                           \ fib(9)"
   ]

@@ -145,6 +145,8 @@ returnCont :: ContType -> Value -> Engine Value
 returnCont ct value = do
   Cont { cType = ct', cCont = cc, cScope = cs } <- popCont ct
   if ct' == ct
-    then do -- modify $ \state -> state { scopeStack = cs }
-            cc value
+    then do
+      -- modify $ \state -> state { scopeStack = cs }
+      when (ct == CReturn) popScope
+      cc value
     else returnCont ct value
