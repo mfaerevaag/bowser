@@ -11,6 +11,7 @@ import Bowser.AST
 import Bowser.Types
 import Bowser.GlobalObject
 import Bowser.Engine.Helper
+import Bowser.Engine.Error
 import Bowser.Engine.Monad
 
 -- engine
@@ -21,7 +22,7 @@ eval ast threshold = runEngine (newState threshold newGlobalObject) (evalAst ast
 
 call :: Ident -> [JSExpression] -> Engine Value
 call id args = do
-  func <- lookupScope id >>= maybe (throwError ("undefined function: " ++ id)) return
+  func <- lookupScope id >>= maybe ((throwError . ERef) ("undefined function " ++ id)) return
   pairs <- liftM (zip ((params . native) func)) (sequence (map evalExpr args))
   -- add arguments
   pushScope
@@ -35,7 +36,7 @@ call id args = do
 
 evalAst :: JSAst -> Engine Value
 evalAst (JSAstProgram stmts _) = liftM last $ mapM evalStmt stmts
-evalAst x = throwError ("not implemented ast: " ++ (show x))
+evalAst x = throwError . ETodo $ "ast " ++ show x
 
 -- statement
 
@@ -77,7 +78,7 @@ evalStmt stmt = do
         JSMemberDot e@(JSIdentifier _ id) _ (JSIdentifier _ mem) -> do
           -- check exists
           case (return (evalExpr e)) of
-            Nothing -> throwError ("undefined variable: " ++ id)
+            Nothing -> throwError . ERef $ "undefined variable " ++ id
             Just _ -> return ()
           updateScopeWith id mem val >> return JSUndefined
 
@@ -122,7 +123,7 @@ evalStmt stmt = do
                   f value
                 else return lastValue
 
-    x -> throwError ("not implemented stmt: " ++ (show x))
+    x -> throwError . ETodo $ "stmt " ++ show x
 
 -- expression
 
@@ -138,7 +139,7 @@ evalExpr expr = do
     JSDecimal _ s -> return $ JSNumber (read s)
 
     -- ident
-    JSIdentifier _ id -> lookupScope id >>= maybe (throwError ("unbound variable: " ++ id)) return
+    JSIdentifier _ id -> lookupScope id >>= maybe ((throwError . ERef) ("unbound variable " ++ id)) return
 
     -- string literal
     JSStringLiteral _ s -> return $ JSString (strip s)
@@ -149,7 +150,7 @@ evalExpr expr = do
       "null" -> return JSNull
       "true" -> return $ JSBoolean True
       "false" -> return $ JSBoolean False
-      _ -> throwError ("unknown literal: " ++ s)
+      _ -> throwError . ETodo $ "literal " ++ s
 
     -- object literal
     JSObjectLiteral _ clist _ -> do
@@ -193,9 +194,9 @@ evalExpr expr = do
       case op of
         JSUnaryOpMinus _ -> case e' of
           JSNumber n -> return $ JSNumber $ negate n
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         JSUnaryOpNot _ -> return $ JSBoolean $ not (valueToBool e')
-        _ -> throwError ("not implemented operator: " ++ (show op))
+        _ -> throwError . ETodo $ "operator " ++ show op
       where
         err op' = ("type error: unary operator '" ++ (show op') ++ "' got unexpected arg")
 
@@ -210,60 +211,60 @@ evalExpr expr = do
           (JSNumber s1, JSString s2) -> return $ JSString $ (++) (show s1) s2
           (JSString s1, JSNumber s2) -> return $ JSString $ (++) s1 (show s2)
           (JSString s1, JSString s2) -> return $ JSString $ (++) s1 s2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- subtraction
         JSBinOpMinus _ -> case (e1', e2') of
           (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (-) i1 i2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- multiplication
         JSBinOpTimes _ -> case (e1', e2') of
           (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (*) i1 i2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- division
         JSBinOpDivide _ -> case (e1', e2') of
           (JSNumber i1, JSNumber i2) -> return $ JSNumber $ (/) i1 i2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- and
         JSBinOpAnd _ -> case (e1', e2') of
           (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (&&) b1 b2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- or
         JSBinOpOr _ -> case (e1', e2') of
           (JSBoolean b1, JSBoolean b2) -> return $ JSBoolean $ (||) b1 b2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- equal
         JSBinOpEq _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (==) n1 n2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- not equal
         JSBinOpNeq _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (/=) n1 n2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- less than
         JSBinOpLt _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<) n1 n2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- less or equal
         JSBinOpLe _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (<=) n1 n2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- greater than
         JSBinOpGt _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>) n1 n2
-          _ -> throwError $ err op
+          _ -> throwError . EType $ err op
         -- greater or equal
         JSBinOpGe _ -> case (e1', e2') of
           (JSNumber n1, JSNumber n2) -> return $ JSBoolean $ (>=) n1 n2
-          _ -> throwError $ err op
-        _ -> throwError ("not implemented operator: " ++ (show op))
+          _ -> throwError . EType $ err op
+        _ -> throwError . ETodo $ "operator " ++ show op
       where
-        err op' = ("type error: binary operator '" ++ (show op') ++ "' got unexpected args")
+        err op' = "binary operator '" ++ show op' ++ "' got unexpected args"
 
     -- expression postfix
     JSExpressionPostfix e op -> case op of
       JSUnaryOpIncr _ -> evalExpr (JSExpressionBinary e (JSBinOpPlus JSNoAnnot) (JSDecimal JSNoAnnot "1"))
       JSUnaryOpDecr _ -> evalExpr (JSExpressionBinary e (JSBinOpMinus JSNoAnnot) (JSDecimal JSNoAnnot "1"))
-      _ -> throwError ("not implemented post-fix operator: " ++ (show op))
+      _ -> throwError . ETodo $ "post-fix operator " ++ show op
 
     -- otherwise
-    x -> throwError ("not implemented expr: " ++ (show x))
+    x -> throwError . ETodo $ "expr " ++ show x

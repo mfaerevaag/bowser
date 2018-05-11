@@ -4,7 +4,7 @@ import Control.Exception
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Bowser.Test.Exception
+import Bowser.Test.Helper
 import Bowser.Test.Engine
 
 main :: IO ()

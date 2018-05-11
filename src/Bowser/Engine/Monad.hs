@@ -1,6 +1,6 @@
 module Bowser.Engine.Monad where
 
-import Control.Monad.Identity
+import Data.Maybe
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State hiding (State)
@@ -8,11 +8,12 @@ import Control.Monad.Writer
 import Control.Monad.Cont hiding (Cont)
 
 import Bowser.Types
+import Bowser.Engine.Error
 
-             -- Exception    -- State      -- Continuation
-type Engine a = ExceptT String (StateT State (ContT ((Either String Value), State) IO)) a
+             -- Exception         -- State      -- Continuation
+type Engine a = ExceptT Error (StateT State (ContT ((Either Error Value), State) IO)) a
 
-runEngine :: State -> Engine Value -> IO ((Either String Value), State)
+runEngine :: State -> Engine Value -> IO ((Either Error Value), State)
 runEngine st ast = runContT (runStateT (runExceptT ast) st) return
 
 -- state
@@ -32,7 +33,7 @@ incState = do
   State { step = st, threshold = th } <- get
   case th of
     Just t -> when (st > t) $
-      throwError "eval stopped: step threshold reached"
+      throwError . EStep . fromJust $ th
     _ -> return ()
   -- inc counter
   modify $ \s -> s { step = (st + 1) }
@@ -56,7 +57,7 @@ updateScope :: Ident -> Value -> Engine ()
 updateScope id val = do
   state@State { scopeStack = stack } <- get
   case f stack of
-    (Nothing, _) -> throwError $ "undefined variable " ++ id
+    (Nothing, _) -> throwError . ERef $ "undefined variable " ++ id
     (Just _, stack') -> put $ state { scopeStack = stack' }
   where
     f [] = (Nothing, [])
@@ -128,7 +129,7 @@ popCont :: ContType -> Engine Cont
 popCont ct = do
   s@State { contStack = cs } <- get
   case cs of
-    [] -> do throwError $ "illegal " ++ show ct ++ " statement"
+    [] -> do throwError . ESyntax $ "illegal " ++ show ct ++ " statement"
     (c:cs') -> do
       put $ s { contStack = cs' }
       return c

@@ -59,7 +59,7 @@ main = do
     pPrint state
 
   case res of
-    Left err -> die err
+    Left err -> die . show $ err
     Right x -> case x of
       JSNumber n | n == 0 -> exitSuccess
       JSNumber n -> exitWith . ExitFailure . floor $ n
