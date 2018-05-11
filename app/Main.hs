@@ -3,9 +3,11 @@ module Main where
 import Control.Monad
 import Data.Maybe
 import Text.Show.Pretty
+import System.Exit
 import System.Console.ParseArgs
 
 import Bowser.Parser
+import Bowser.Types
 import Bowser.Engine.Interp
 
 data Options = Filename
@@ -44,9 +46,16 @@ main = do
     pPrint ast
     putStrLn ""
 
-  res <- eval ast (liftM toInteger ((getArg args Threshold)::Maybe Int))
+  res@(val, state) <- eval ast (liftM toInteger ((getArg args Threshold)::Maybe Int))
 
   when (gotArg args VerboseFlag) $ do
     putStrLn ""
     putStrLn "return:"
     pPrint res
+
+  case val of
+    Left err -> die err
+    Right x -> case x of
+      JSNumber n | n == 0 -> exitSuccess
+      JSNumber n -> exitWith . ExitFailure . floor $ n
+      _ -> exitSuccess
